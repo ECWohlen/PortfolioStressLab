@@ -1,0 +1,1409 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Stress Lab</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg:       #0d0f14;
+  --bg2:      #13161e;
+  --bg3:      #1a1e28;
+  --border:   rgba(255,255,255,0.07);
+  --border2:  rgba(255,255,255,0.13);
+  --text:     #e8eaf0;
+  --muted:    #6b7280;
+  --accent:   #4f8ef7;
+  --accent2:  #7cb9ff;
+  --green:    #34d399;
+  --amber:    #fbbf24;
+  --red:      #f87171;
+  --violet:   #a78bfa;
+  --font:     'Inter', sans-serif;
+  --mono:     'JetBrains Mono', monospace;
+  --radius:   10px;
+  --radius-lg:16px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ── Layout ── */
+.shell { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+
+/* ── Sidebar ── */
+.sidebar {
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  padding: 20px 16px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  overflow-y: auto;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.logo-mark {
+  width: 28px; height: 28px;
+  background: var(--accent);
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 600; color: #fff;
+}
+.logo-text { font-size: 13px; font-weight: 600; letter-spacing: .02em; }
+.logo-sub  { font-size: 10px; color: var(--muted); }
+
+/* Sidebar sections */
+.sb-section { display: flex; flex-direction: column; gap: 10px; }
+.sb-label {
+  font-size: 9px; font-weight: 600; letter-spacing: .1em;
+  color: var(--muted); text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+/* Sliders */
+.ctrl { display: flex; flex-direction: column; gap: 4px; }
+.ctrl-head { display: flex; justify-content: space-between; align-items: baseline; }
+.ctrl-name { font-size: 11px; color: #c9cdd8; }
+.ctrl-val  { font-family: var(--mono); font-size: 11px; color: var(--accent2); font-weight: 500; }
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%; height: 3px;
+  background: var(--bg3);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg2);
+  cursor: pointer;
+  transition: transform .1s;
+}
+input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+/* Scenario pills */
+.scen-group { display: flex; flex-direction: column; gap: 5px; }
+.scen-pill {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 10px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  transition: all .15s;
+  text-align: left;
+}
+.scen-pill:hover { border-color: var(--border2); background: var(--bg3); }
+.scen-pill.active { border-color: transparent; }
+.scen-pill-left { display: flex; align-items: center; gap: 7px; }
+.scen-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.scen-name { font-size: 11px; font-weight: 500; }
+.scen-ret  { font-family: var(--mono); font-size: 10px; }
+
+/* ETF checkboxes */
+.etf-list { display: flex; flex-direction: column; gap: 5px; }
+.etf-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all .15s;
+  user-select: none;
+}
+.etf-item:hover { border-color: var(--border2); background: var(--bg3); }
+.etf-item.active { border-color: var(--border2); background: var(--bg3); }
+.etf-check {
+  width: 16px; height: 16px; border-radius: 4px;
+  border: 1.5px solid var(--muted);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; flex-shrink: 0;
+  transition: all .12s;
+}
+.etf-item.active .etf-check {
+  background: var(--accent); border-color: var(--accent); color: #fff;
+}
+.etf-info { flex: 1; min-width: 0; }
+.etf-ticker { font-family: var(--mono); font-size: 10px; color: var(--accent2); font-weight: 500; }
+.etf-name   { font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.etf-weight-box { display: flex; align-items: center; gap: 4px; }
+.etf-wt { font-family: var(--mono); font-size: 10px; color: var(--text); }
+.etf-wt-input {
+  width: 38px; padding: 2px 4px;
+  background: var(--bg); border: 1px solid var(--border2);
+  border-radius: 4px; color: var(--text);
+  font-family: var(--mono); font-size: 10px;
+  text-align: right; outline: none;
+}
+.etf-wt-input:focus { border-color: var(--accent); }
+
+.weight-warning { font-size: 10px; color: var(--amber); padding: 4px 0; }
+
+/* ── Main ── */
+.main { padding: 24px; display: flex; flex-direction: column; gap: 20px; overflow: auto; }
+
+/* KPI strip */
+.kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.kpi {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+}
+.kpi-label { font-size: 10px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .05em; }
+.kpi-value { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.kpi-sub   { font-size: 10px; color: var(--muted); margin-top: 2px; }
+.kpi.pos .kpi-value { color: var(--green); }
+.kpi.neg .kpi-value { color: var(--red); }
+.kpi.neu .kpi-value { color: var(--accent2); }
+
+/* Card */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.card-head {
+  padding: 14px 18px 10px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+.card-title { font-size: 12px; font-weight: 600; letter-spacing: .02em; color: #c9cdd8; }
+.card-body  { padding: 16px 18px; }
+
+/* Tabs */
+.tab-row { display: flex; gap: 4px; flex-wrap: wrap; }
+.tab-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px; font-family: var(--font);
+  cursor: pointer; transition: all .12s;
+}
+.tab-btn:hover { color: var(--text); border-color: var(--border2); }
+.tab-btn.on { background: var(--bg3); color: var(--text); border-color: var(--border2); }
+
+/* Phase timeline */
+.phase-strip { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+.phase-card {
+  border-radius: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg3);
+}
+.phase-num  { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; margin-bottom: 2px; }
+.phase-name { font-size: 10px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .06em; }
+.phase-bar  { height: 3px; border-radius: 2px; margin-bottom: 8px; }
+.phase-desc { font-size: 10px; color: var(--muted); line-height: 1.5; }
+.phase-ret  { font-family: var(--mono); font-size: 11px; font-weight: 500; margin-top: 4px; }
+
+/* Compare grid */
+.compare-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* Insight */
+.insight {
+  padding: 12px 14px;
+  background: var(--bg3);
+  border-radius: var(--radius);
+  border-left: 3px solid var(--accent);
+  font-size: 11px;
+  color: #9ca3af;
+  line-height: 1.65;
+  margin-top: 12px;
+}
+.insight b { color: var(--text); }
+
+/* Legend row */
+.leg { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 10px; }
+.leg-i { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--muted); }
+.leg-sq { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.leg-dash { width: 18px; height: 2px; border-top: 2px dashed; flex-shrink: 0; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* Responsive */
+@media (max-width: 780px) {
+  .shell { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; }
+  .phase-strip { grid-template-columns: 1fr 1fr; }
+  .compare-row { grid-template-columns: 1fr; }
+}
+
+/* Probability module */
+.prob-strip { display: flex; flex-direction: column; gap: 8px; }
+.prob-item {
+  display: grid;
+  grid-template-columns: 130px 1fr 52px;
+  grid-template-areas: "name track pct" "reason reason reason";
+  align-items: center; gap: 6px 12px;
+  padding: 9px 11px; border-radius: var(--radius);
+  border: 1px solid var(--border); background: var(--bg3);
+  cursor: pointer; transition: all .15s;
+}
+.prob-item:hover { border-color: var(--border2); }
+.prob-item.top { border-color: var(--border2); }
+.prob-item .prob-left { grid-area: name; }
+.prob-item .prob-track { grid-area: track; }
+.prob-item .prob-pct { grid-area: pct; }
+.prob-reason {
+  grid-area: reason;
+  font-size: 10px; color: var(--muted);
+  line-height: 1.5; padding-top: 2px;
+  border-top: 1px solid var(--border);
+  margin-top: 2px;
+}
+.prob-left { display: flex; align-items: center; gap: 7px; }
+.prob-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.prob-name { font-size: 11px; font-weight: 500; }
+.prob-track { height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; }
+.prob-fill { height: 100%; border-radius: 3px; transition: width .4s ease; }
+.prob-pct { font-family: var(--mono); font-size: 12px; font-weight: 500; text-align: right; }
+.prob-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: 20px;
+  font-size: 10px; font-weight: 500;
+  background: var(--bg3); border: 1px solid var(--border2);
+}
+.driver-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(130px,1fr)); gap: 8px; margin-top: 12px; }
+.driver { padding: 9px 11px; border-radius: 8px; background: var(--bg3); border: 1px solid var(--border); }
+.driver-lbl { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 3px; }
+.driver-val { font-family: var(--mono); font-size: 13px; font-weight: 500; }
+.driver-note { font-size: 9px; color: var(--muted); margin-top: 2px; }
+.likely-banner {
+  padding: 16px 18px; border-radius: var(--radius-lg);
+  margin-bottom: 4px;
+  border: 1px solid var(--border2);
+}
+.likely-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.likely-title { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.likely-name { font-size: 24px; font-weight: 600; margin: 4px 0; }
+.likely-desc { font-size: 12px; color: #9ca3af; line-height: 1.6; }
+
+/* Top view tabs */
+.view-tabs {
+  display: flex; gap: 6px; margin-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+.view-tab {
+  padding: 10px 18px 12px;
+  background: transparent; border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted); font-size: 13px; font-weight: 500;
+  font-family: var(--font); cursor: pointer;
+  transition: all .15s; margin-bottom: -1px;
+}
+.view-tab:hover { color: var(--text); }
+.view-tab.on { color: var(--text); border-bottom-color: var(--accent); }
+.view-panel { display: none; flex-direction: column; gap: 20px; }
+.view-panel.on { display: flex; }
+
+/* Outperformance specific */
+.op-hero { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px 20px; }
+.op-hero-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); gap: 14px; margin-top: 12px; }
+.op-stat-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+.op-stat-val { font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.op-stat-sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
+.holding-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.holding-table th { text-align: left; padding: 8px 10px; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid var(--border); font-weight: 500; }
+.holding-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); }
+.holding-table tr:last-child td { border-bottom: none; }
+.holding-tkr { font-family: var(--mono); font-weight: 500; }
+.holding-wt { font-family: var(--mono); text-align: right; }
+.op-warn { background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.25); border-radius: var(--radius); padding: 12px 14px; font-size: 11px; color: #d4a437; line-height: 1.6; }
+.op-warn b { color: #fbbf24; }
+.pill-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.pill { font-size: 10px; padding: 3px 9px; border-radius: 20px; background: var(--bg3); border: 1px solid var(--border); color: var(--muted); }
+.data-date { font-size: 10px; color: var(--muted); font-family: var(--mono); }
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ══════════════ SIDEBAR ══════════════ -->
+<aside class="sidebar">
+
+  <div class="logo">
+    <div class="logo-mark">S</div>
+    <div>
+      <div class="logo-text">Portfolio Stress Lab</div>
+      <div class="logo-sub">G7 · SMI/SPI · Norwegerfonds</div>
+    </div>
+  </div>
+
+  <!-- KAPITAL & ENTNAHME -->
+  <div class="sb-section">
+    <div class="sb-label">Kapital & Entnahme</div>
+    <div class="ctrl">
+      <div class="ctrl-head"><span class="ctrl-name">Startkapital (CHF)</span><span class="ctrl-val" id="cv-kap">2'500'000</span></div>
+      <input type="range" id="sl-kap" min="250000" max="10000000" step="50000" value="2500000" oninput="go()">
+    </div>
+    <div class="ctrl">
+      <div class="ctrl-head"><span class="ctrl-name">Entnahme p.a. (CHF)</span><span class="ctrl-val" id="cv-entn">0</span></div>
+      <input type="range" id="sl-entn" min="0" max="200000" step="5000" value="0" oninput="go()">
+    </div>
+    <div class="ctrl">
+      <div class="ctrl-head"><span class="ctrl-name">Prognose-Horizont</span><span class="ctrl-val" id="cv-hor">10 J.</span></div>
+      <input type="range" id="sl-hor" min="3" max="15" step="1" value="10" oninput="go()">
+    </div>
+    <div class="ctrl">
+      <div class="ctrl-head"><span class="ctrl-name">Steuer & Depot-Gebühr</span><span class="ctrl-val" id="cv-tax">0.3%</span></div>
+      <input type="range" id="sl-tax" min="0" max="1.5" step="0.1" value="0.3" oninput="go()">
+    </div>
+  </div>
+
+  <!-- ZINSEN & MAKRO -->
+  <div class="sb-section">
+    <div class="sb-label">Makro-Parameter</div>
+    <div class="ctrl">
+      <div class="ctrl-head"><span class="ctrl-name">SNB Leitzins (%)</span><span class="ctrl-val" id="cv-snb">0.00%</span></div>
+      <input type="range" id="sl-snb" min="-0.75" max="4" step="0.25" value="0" oninput="go()">
+    </div>
+    <div class="ctrl">
+      <div class="ctrl-head"><span class="ctrl-name">EZB Leitzins (%)</span><span class="ctrl-val" id="cv-ezb">2.50%</span></div>
+      <input type="range" id="sl-ezb" min="0" max="6" step="0.25" value="2.5" oninput="go()">
+    </div>
+    <div class="ctrl">
+      <div class="ctrl-head"><span class="ctrl-name">Fed Funds Rate (%)</span><span class="ctrl-val" id="cv-fed">4.25%</span></div>
+      <input type="range" id="sl-fed" min="1" max="8" step="0.25" value="4.25" oninput="go()">
+    </div>
+    <div class="ctrl">
+      <div class="ctrl-head"><span class="ctrl-name">CH Inflation CPI (%)</span><span class="ctrl-val" id="cv-inf">0.4%</span></div>
+      <input type="range" id="sl-inf" min="-0.5" max="6" step="0.1" value="0.4" oninput="go()">
+    </div>
+    <div class="ctrl">
+      <div class="ctrl-head"><span class="ctrl-name">EUR/CHF Kurs</span><span class="ctrl-val" id="cv-chf">0.938</span></div>
+      <input type="range" id="sl-chf" min="0.78" max="1.10" step="0.005" value="0.938" oninput="go()">
+    </div>
+    <div class="ctrl">
+      <div class="ctrl-head"><span class="ctrl-name">Erholungsgeschw.</span><span class="ctrl-val" id="cv-spd">normal</span></div>
+      <input type="range" id="sl-spd" min="0.5" max="2" step="0.25" value="1" oninput="go()">
+    </div>
+  </div>
+
+  <!-- SZENARIEN -->
+  <div class="sb-section">
+    <div class="sb-label">Szenario</div>
+    <div class="scen-group" id="scen-group"></div>
+  </div>
+
+</aside>
+
+<!-- ══════════════ MAIN ══════════════ -->
+<main class="main">
+
+  <div class="view-tabs">
+    <button class="view-tab on" id="vt-sim" onclick="switchView('sim')">Szenario-Simulation</button>
+    <button class="view-tab" id="vt-op" onclick="switchView('op')">Outperformance-Portfolio</button>
+  </div>
+
+  <div class="view-panel on" id="panel-sim">
+
+  <!-- KPI strip -->
+  <div class="kpi-row" id="kpi-row">
+    <div class="kpi neu"><div class="kpi-label">Startkapital</div><div class="kpi-value" id="kv-start">2,5 Mio.</div><div class="kpi-sub">CHF</div></div>
+    <div class="kpi" id="kpi-exret"><div class="kpi-label">Erwartete Rendite</div><div class="kpi-value" id="kv-exret">—</div><div class="kpi-sub" id="kv-exret-sub">p.a. gewichtet</div></div>
+    <div class="kpi" id="kpi-end"><div class="kpi-label">Endwert (Median)</div><div class="kpi-value" id="kv-end">—</div><div class="kpi-sub" id="kv-end-sub">—</div></div>
+    <div class="kpi" id="kpi-min"><div class="kpi-label">Tiefpunkt</div><div class="kpi-value" id="kv-min">—</div><div class="kpi-sub" id="kv-min-sub">—</div></div>
+    <div class="kpi" id="kpi-rec"><div class="kpi-label">Erholung auf Start</div><div class="kpi-value" id="kv-rec">—</div><div class="kpi-sub">Jahre nach Krisenbeginn</div></div>
+    <div class="kpi neu"><div class="kpi-label">TER gewichtet</div><div class="kpi-value" id="kv-ter">0.21%</div><div class="kpi-sub">p.a. ETF-Kosten</div></div>
+  </div>
+
+  <!-- Eintretenswahrscheinlichkeit -->
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">Eintretenswahrscheinlichkeit (marktdatenbasiert)</span>
+      <span style="font-size:10px;color:var(--muted)">Kalibriert auf IWF/OECD-Prognosen · Stand Aug 2026</span>
+    </div>
+    <div class="card-body">
+      <div id="likely-banner" class="likely-banner"></div>
+      <div style="font-size:10px;color:var(--muted);margin:14px 0 8px;text-transform:uppercase;letter-spacing:.05em">Alle Szenarien nach Wahrscheinlichkeit</div>
+      <div class="prob-strip" id="prob-strip"></div>
+      <div class="driver-grid" id="driver-grid"></div>
+      <div class="insight" id="prob-insight"></div>
+    </div>
+  </div>
+
+  <!-- ETF Auswahl -->
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">ETF-Zusammensetzung</span>
+      <span style="font-size:10px;color:var(--muted)">Gewichtung in % — Summe muss 100% ergeben</span>
+    </div>
+    <div class="card-body">
+      <div class="etf-list" id="etf-list"></div>
+      <div class="weight-warning" id="wt-warn" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- Phasen -->
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">Szenario-Phasen: Krise → Stabilisierung → Erholung → Normalisierung</span>
+    </div>
+    <div class="card-body">
+      <div class="phase-strip" id="phase-strip"></div>
+    </div>
+  </div>
+
+  <!-- Hauptchart -->
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">Vermögensverlauf</span>
+      <div class="tab-row" id="tab-row">
+        <button class="tab-btn on" onclick="switchTab('erwartung',this)">Erwartungspfad</button>
+        <button class="tab-btn" onclick="switchTab('pfad',this)">Einzelszenario</button>
+        <button class="tab-btn" onclick="switchTab('rendite',this)">Jahresrendite</button>
+        <button class="tab-btn" onclick="switchTab('asset',this)">Asset-Mix</button>
+        <button class="tab-btn" onclick="switchTab('real',this)">Realwert</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="leg" id="leg-main"></div>
+      <div style="position:relative;width:100%;height:310px">
+        <canvas id="cMain" role="img" aria-label="Vermögensverlauf Portfolio"></canvas>
+      </div>
+      <div class="insight" id="ins-main"></div>
+    </div>
+  </div>
+
+  <!-- Vergleichscharts -->
+  <div class="compare-row">
+    <div class="card">
+      <div class="card-head"><span class="card-title">Max. Kapitalverlust je Szenario</span></div>
+      <div class="card-body">
+        <div style="position:relative;width:100%;height:220px">
+          <canvas id="cLoss" role="img" aria-label="Maximaler Kapitalverlust je Szenario"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><span class="card-title">Erholungsdauer (Jahre bis Start)</span></div>
+      <div class="card-body">
+        <div style="position:relative;width:100%;height:220px">
+          <canvas id="cRec" role="img" aria-label="Erholungsdauer je Szenario"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SMI/SPI Druckanzeige -->
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">SMI / SPI Stress-Indikator (aktuell)</span>
+      <span style="font-size:10px;color:var(--muted)">Basiert auf SNB-Leitzins, EUR/CHF und CPI-Eingaben</span>
+    </div>
+    <div class="card-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px" id="smi-grid"></div>
+    </div>
+  </div>
+
+  </div><!-- /panel-sim -->
+
+  <!-- ══════════════ PANEL 2: OUTPERFORMANCE ══════════════ -->
+  <div class="view-panel" id="panel-op">
+
+    <div class="op-hero">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Renditeoptimiertes Portfolio</div>
+          <div style="font-size:20px;font-weight:600;margin:4px 0">Schlägt den Norwegerfonds — Ziel 5–6% p.a.</div>
+          <div style="font-size:12px;color:#9ca3af;line-height:1.6;max-width:560px">Höherer Aktienanteil mit Quality-, Momentum- und Small-Cap-Tilts. Erwartete Mehrrendite gegenüber dem GPFG — bei bewusst höherem Risiko.</div>
+        </div>
+        <div style="text-align:right">
+          <div class="data-date" id="op-date">Stand: —</div>
+          <button class="tab-btn" style="margin-top:8px" onclick="refreshOpDate()">Daten-Stempel aktualisieren</button>
+        </div>
+      </div>
+      <div class="op-hero-grid">
+        <div class="op-stat"><div class="op-stat-lbl">Erwartete Rendite</div><div class="op-stat-val pos" id="op-ret" style="color:#34d399">—</div><div class="op-stat-sub">p.a. nominal, langfristig</div></div>
+        <div class="op-stat"><div class="op-stat-lbl">Norwegerfonds-Vergleich</div><div class="op-stat-val" id="op-vs" style="color:#4f8ef7">—</div><div class="op-stat-sub" id="op-vs-sub">Mehrrendite p.a.</div></div>
+        <div class="op-stat"><div class="op-stat-lbl">Erwartete Volatilität</div><div class="op-stat-val" id="op-vol" style="color:#fbbf24">—</div><div class="op-stat-sub">Schwankung p.a.</div></div>
+        <div class="op-stat"><div class="op-stat-lbl">Max. Drawdown (Stress)</div><div class="op-stat-val" id="op-dd" style="color:#f87171">—</div><div class="op-stat-sub">im Krisenszenario</div></div>
+      </div>
+    </div>
+
+    <div class="op-warn" id="op-warn"></div>
+
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">Portfolio-Zusammensetzung</span>
+        <span style="font-size:10px;color:var(--muted)">7 Positionen · gewichtet nach Faktor-Beitrag</span>
+      </div>
+      <div class="card-body">
+        <table class="holding-table" id="op-holdings"></table>
+      </div>
+    </div>
+
+    <div class="compare-row">
+      <div class="card">
+        <div class="card-head"><span class="card-title">Erwartete Rendite: Outperformance vs. Norwegerfonds</span></div>
+        <div class="card-body">
+          <div style="position:relative;width:100%;height:230px">
+            <canvas id="opCompChart" role="img" aria-label="Renditevergleich Outperformance vs Norwegerfonds"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">Vermögenswachstum CHF (10 Jahre, erwartet)</span></div>
+        <div class="card-body">
+          <div style="position:relative;width:100%;height:230px">
+            <canvas id="opGrowthChart" role="img" aria-label="Vermögenswachstum Vergleich"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">Wie hält man das Portfolio aktuell?</span>
+      </div>
+      <div class="card-body">
+        <div id="op-howto" style="font-size:12px;color:#9ca3af;line-height:1.7"></div>
+      </div>
+    </div>
+
+  </div><!-- /panel-op -->
+
+  <div style="font-size:10px;color:var(--muted);text-align:center;padding:8px 0">
+    Portfolio Stress Lab · Simulation auf Basis historischer Analogien · Keine Anlageberatung · Alle Angaben in CHF
+  </div>
+
+</main>
+</div>
+
+<script>
+/* ── DATA ── */
+const ETF_UNIVERSE = [
+  {id:'vwce',   ticker:'VWCE',  name:'Vanguard FTSE All-World',       ter:0.0022, type:'eq',    color:'#4f8ef7', def:71},
+  {id:'xgsg',   ticker:'XGSG',  name:'Xtrackers Global Gov. Bond',     ter:0.0020, type:'bond',  color:'#34d399', def:18},
+  {id:'corp',   ticker:'CORP',  name:'iShares Global Corp. Bond',      ter:0.0025, type:'corp',  color:'#fbbf24', def:9},
+  {id:'tret',   ticker:'TRET',  name:'VanEck Global Real Estate',      ter:0.0025, type:'re',    color:'#e87ba4', def:2},
+  {id:'v3aa',   ticker:'V3AA',  name:'Vanguard ESG Global All Cap',    ter:0.0024, type:'eq',    color:'#60a5fa', def:0},
+  {id:'eunl',   ticker:'EUNL',  name:'iShares MSCI World Core',        ter:0.0020, type:'eq',    color:'#818cf8', def:0},
+  {id:'scha',   ticker:'CHDVD', name:'iShares Swiss Dividend',         ter:0.0015, type:'ch',    color:'#f43f5e', def:0},
+  {id:'em',     ticker:'VFEM',  name:'Vanguard FTSE EM UCITS ETF',     ter:0.0022, type:'em',    color:'#fb923c', def:0},
+  {id:'gold',   ticker:'ZGLD',  name:'ZKB Gold ETF (CHF hedged)',       ter:0.0040, type:'gold',  color:'#eab308', def:0},
+  {id:'infra',  ticker:'CORE',  name:'iShares Global Infra. ETF',      ter:0.0065, type:'re',    color:'#a78bfa', def:0},
+];
+
+const SCENARIOS = {
+  basis:  { name:'Basis',           color:'#4f8ef7', phases:[{dur:0,retEq:.08,retBond:.025,retCorp:.035,retRe:.055,retCh:.06,retEm:.09,retGold:.02,name:'—',desc:'Normalzustand'},{dur:0,retEq:.08,retBond:.025,retCorp:.035,retRe:.055,retCh:.06,retEm:.09,retGold:.02,name:'—',desc:''},{dur:0,retEq:.08,retBond:.025,retCorp:.035,retRe:.055,retCh:.06,retEm:.09,retGold:.02,name:'—',desc:''},{dur:0,retEq:.08,retBond:.025,retCorp:.035,retRe:.055,retCh:.06,retEm:.09,retGold:.02,name:'—',desc:''}], single:true },
+  softl:  { name:'Soft Landing',    color:'#34d399', phases:[{dur:.5,retEq:.04,retBond:.03,retCorp:.035,retRe:.02,retCh:.03,retEm:.05,retGold:.01,name:'Übergang',desc:'Inflation bereits gezähmt, erste Zinssenkungen folgen'},{dur:1,retEq:.08,retBond:.05,retCorp:.055,retRe:.05,retCh:.05,retEm:.09,retGold:.01,name:'Stabilisierung',desc:'Marktvertrauen kehrt zurück'},{dur:2,retEq:.11,retBond:.04,retCorp:.05,retRe:.07,retCh:.07,retEm:.12,retGold:-.01,name:'Erholung',desc:'Aktien und Anleihen steigen'},{dur:3,retEq:.08,retBond:.03,retCorp:.035,retRe:.055,retCh:.06,retEm:.09,retGold:.02,name:'Normalisierung',desc:'Basis-Renditen'}] },
+  zins:   { name:'SNB Zinsanstieg', color:'#fbbf24', phases:[{dur:1.5,retEq:-.12,retBond:-.08,retCorp:-.06,retRe:-.10,retCh:-.08,retEm:-.10,retGold:.03,name:'Krisenphase',desc:'Zinsanstieg drückt Anleihen & Aktien (Analogie: 2022)'},{dur:1,retEq:.02,retBond:.01,retCorp:.015,retRe:.00,retCh:.01,retEm:.02,retGold:.01,name:'Stabilisierung',desc:'SNB-Zinspfad-Plateau erkennbar'},{dur:2,retEq:.10,retBond:.05,retCorp:.055,retRe:.06,retCh:.07,retEm:.10,retGold:-.01,name:'Erholung',desc:'Zinserwartungen drehen, Anleihen-Renaissance'},{dur:2,retEq:.08,retBond:.03,retCorp:.035,retRe:.055,retCh:.06,retEm:.09,retGold:.02,name:'Normalisierung',desc:'Basis-Renditen'}] },
+  stagfl: { name:'Stagflation',     color:'#fb923c', phases:[{dur:2,retEq:-.18,retBond:-.10,retCorp:-.08,retRe:-.12,retCh:-.10,retEm:-.15,retGold:.08,name:'Krisenphase',desc:'Doppeldruck: Inflation + Zinsanstieg (Analogie: 1970er)'},{dur:1.5,retEq:-.02,retBond:-.02,retCorp:-.01,retRe:-.02,retCh:-.01,retEm:-.03,retGold:.04,name:'Stabilisierung',desc:'Notenbank bremst, Inflation zäh'},{dur:2.5,retEq:.09,retBond:.04,retCorp:.045,retRe:.05,retCh:.06,retEm:.09,retGold:-.02,name:'Erholung',desc:'Inflationsrückgang ermöglicht Zinssenkungen'},{dur:2,retEq:.08,retBond:.03,retCorp:.035,retRe:.055,retCh:.06,retEm:.09,retGold:.02,name:'Normalisierung',desc:'Basis-Renditen'}] },
+  krise:  { name:'Globale Krise',   color:'#f87171', phases:[{dur:.75,retEq:-.32,retBond:.04,retCorp:-.12,retRe:-.22,retCh:-.15,retEm:-.28,retGold:.12,name:'Krisenphase',desc:'Schockartiger Einbruch. Staatsanleihen als Puffer (Analogie: 2008, 2020)'},{dur:.5,retEq:.05,retBond:.02,retCorp:.02,retRe:.01,retCh:.03,retEm:.04,retGold:.02,name:'Stabilisierung',desc:'Notenbanken und Fiskalpolitik greifen ein'},{dur:1.5,retEq:.22,retBond:.02,retCorp:.07,retRe:.10,retCh:.12,retEm:.20,retGold:-.03,name:'Erholung',desc:'V-förmige Erholung, Aktien überholen Anleihen'},{dur:2,retEq:.09,retBond:.025,retCorp:.035,retRe:.055,retCh:.07,retEm:.10,retGold:.02,name:'Normalisierung',desc:'Vollständige Rückkehr'}] },
+  chf:    { name:'CHF-Schock',      color:'#a78bfa', phases:[{dur:.5,retEq:-.15,retBond:.01,retCorp:-.03,retRe:-.08,retCh:-.18,retEm:-.12,retGold:.05,name:'Krisenphase',desc:'CHF-Aufwertung trifft Exporteure stark (Analogie: 2015)'},{dur:1,retEq:.00,retBond:.01,retCorp:.01,retRe:.00,retCh:-.02,retEm:.01,retGold:.01,name:'Stabilisierung',desc:'SNB interveniert, CHF normalisiert langsam'},{dur:1.5,retEq:.10,retBond:.025,retCorp:.04,retRe:.05,retCh:.08,retEm:.09,retGold:-.01,name:'Erholung',desc:'CHF schwächt sich, Exporteure erholen sich'},{dur:2,retEq:.08,retBond:.03,retCorp:.035,retRe:.055,retCh:.06,retEm:.09,retGold:.02,name:'Normalisierung',desc:'Basis-Renditen'}] },
+};
+
+const TYPE_RET_MAP = { eq:'retEq', bond:'retBond', corp:'retCorp', re:'retRe', ch:'retCh', em:'retEm', gold:'retGold' };
+
+let activeSc = 'krise';
+let activeTab = 'erwartung';
+let etfState = {};
+let charts = {};
+
+ETF_UNIVERSE.forEach(e=>{ etfState[e.id]={active:e.def>0, weight:e.def}; });
+
+/* ── HELPERS ── */
+function fmt(n,dec=0){ return new Intl.NumberFormat('de-CH',{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(n); }
+function fmtCHF(n){ return n>=1e6?`${fmt(n/1e6,3)} Mio.`:`${fmt(n)}`; }
+function fmtPct(n,dec=1){ return (n>=0?'+':'')+fmt(n*100,dec)+'%'; }
+function speedLabel(v){ return v<=0.6?'langsam':v<=0.9?'eher langsam':v<=1.1?'normal':v<=1.6?'schnell':'sehr schnell'; }
+
+function activeETFs(){ return ETF_UNIVERSE.filter(e=>etfState[e.id].active); }
+function totalWeight(){ return activeETFs().reduce((s,e)=>s+etfState[e.id].weight,0); }
+
+function weightedTER(){
+  const tot = totalWeight();
+  if(!tot) return 0;
+  return activeETFs().reduce((s,e)=>s+e.ter*(etfState[e.id].weight/tot),0);
+}
+
+function blendReturn(phase){
+  const etfs = activeETFs();
+  const tot = totalWeight();
+  if(!tot) return 0;
+  let r = 0;
+  etfs.forEach(e=>{
+    const key = TYPE_RET_MAP[e.type]||'retEq';
+    r += (etfState[e.id].weight/tot)*(phase[key]||0);
+  });
+  return r;
+}
+
+function smiScore(snb,inf,chf,risk=3){
+  const rr = snb - inf;
+  const rrS = rr>1.2?Math.min(40,Math.round((rr-1.2)*25)):0;
+  const chfS = chf<0.93?Math.round((0.93-chf)*400):0;
+  const riskS = Math.round(risk*4);
+  return Math.min(100,rrS+chfS+riskS);
+}
+
+/* ── BUILD PATH ── */
+function buildPath(sc, kap, entn, tax, speed){
+  const path=[{yr:2024,val:kap}];
+  let val=kap;
+  let yr=2024;
+  const ter=weightedTER();
+  const phases = sc.single ? [{...sc.phases[0],dur:parseInt(document.getElementById('sl-hor').value)}] : sc.phases;
+  phases.forEach(ph=>{
+    const actualDur=ph.dur/speed;
+    const months=Math.max(1,Math.round(actualDur*12));
+    const r=blendReturn(ph);
+    const netR=r-ter-tax/100;
+    const mRet=Math.pow(1+netR,1/12)-1;
+    const mEntn=entn/12;
+    for(let m=0;m<months;m++){
+      val=Math.max(0,val*(1+mRet)-mEntn);
+      yr+=1/12;
+      if(m%3===2||m===months-1) path.push({yr,val});
+    }
+  });
+  return path;
+}
+
+function simBand(sc,kap,entn,tax,speed){
+  const N=60;
+  const paths=[];
+  const phases=sc.single?[{...sc.phases[0],dur:parseInt(document.getElementById('sl-hor').value)}]:sc.phases;
+  for(let run=0;run<N;run++){
+    let val=kap,yr=2024;
+    const p=[{yr,val}];
+    const ter=weightedTER();
+    let seed=42+run*7919;
+    function rng(){seed=(seed*1664525+1013904223)&0xffffffff;return(seed>>>0)/0xffffffff;}
+    phases.forEach(ph=>{
+      const ad=ph.dur/speed;
+      const months=Math.max(1,Math.round(ad*12));
+      const baseR=blendReturn(ph);
+      const vol=Math.abs(baseR)*0.5+0.04;
+      for(let m=0;m<months;m++){
+        const r=baseR+(rng()-0.5)*vol*2;
+        const netR=r-ter-tax/100;
+        val=Math.max(0,val*(1+Math.pow(1+netR,1/12)-1)-entn/12);
+        yr+=1/12;
+        if(m%3===2||m===months-1) p.push({yr,val});
+      }
+    });
+    paths.push(p);
+  }
+  const len=Math.min(...paths.map(p=>p.length));
+  const med=[],p10=[],p90=[];
+  for(let i=0;i<len;i++){
+    const vals=paths.map(p=>p[i].val).sort((a,b)=>a-b);
+    med.push({yr:paths[0][i].yr,val:vals[Math.floor(N*0.5)]});
+    p10.push({yr:paths[0][i].yr,val:vals[Math.floor(N*0.1)]});
+    p90.push({yr:paths[0][i].yr,val:vals[Math.floor(N*0.9)]});
+  }
+  return{med,p10,p90};
+}
+
+/* ── WAHRSCHEINLICHKEITSGEWICHTETER ERWARTUNGSPFAD ──
+   Mischt alle Szenarien mit ihrer aktuellen Eintretenswahrscheinlichkeit.
+   Beantwortet: "Wie entwickelt sich mein Vermögen VORAUSSICHTLICH?" —
+   im Gegensatz zur bedingten Einzelszenario-Ansicht ("FALLS X eintritt"). */
+function expectedPath(kap,entn,tax,speed){
+  const probs=scenarioProbabilities();
+  const bands={};
+  let maxLen=0;
+  Object.keys(SCENARIOS).forEach(k=>{
+    bands[k]=simBand(SCENARIOS[k],kap,entn,tax,speed).med;
+    maxLen=Math.max(maxLen,bands[k].length);
+  });
+  const exp=[], expP10=[], expP90=[];
+  for(let i=0;i<maxLen;i++){
+    let wSum=0, wVal=0, wP10=0, wP90=0, yr=2024;
+    Object.keys(SCENARIOS).forEach(k=>{
+      const band=bands[k];
+      const pt=band[Math.min(i,band.length-1)];
+      const w=probs[k];
+      wSum+=w; wVal+=w*pt.val; yr=pt.yr;
+    });
+    // Spannbreite über Szenarien: bestes vs. schlechtestes gewichtetes Ergebnis
+    const vals=Object.keys(SCENARIOS).map(k=>{
+      const band=bands[k];
+      return band[Math.min(i,band.length-1)].val;
+    }).sort((a,b)=>a-b);
+    exp.push({yr,val:wVal/wSum});
+    expP10.push({yr,val:vals[0]});           // schlechtestes Szenario = untere Grenze
+    expP90.push({yr,val:vals[vals.length-1]}); // bestes Szenario = obere Grenze
+  }
+  return{exp,expP10,expP90,probs};
+}
+
+/* ── RENDER ── */
+function renderSidebar(){
+  const sg=document.getElementById('scen-group');
+  sg.innerHTML='';
+  Object.entries(SCENARIOS).forEach(([k,sc])=>{
+    const on=k===activeSc;
+    const fakePhase={retEq:.08,retBond:.025,retCorp:.035,retRe:.055,retCh:.06,retEm:.09,retGold:.02,...(sc.phases[0]||{})};
+    const r=blendReturn(fakePhase)*100;
+    const btn=document.createElement('button');
+    btn.className='scen-pill'+(on?' active':'');
+    if(on) btn.style.background=sc.color+'22';
+    if(on) btn.style.borderColor=sc.color+'66';
+    btn.innerHTML=`<span class="scen-pill-left"><span class="scen-dot" style="background:${sc.color}"></span><span class="scen-name">${sc.name}</span></span><span class="scen-ret" style="color:${r>=0?'#34d399':'#f87171'}">${(r>=0?'+':'')+r.toFixed(1)}%</span>`;
+    btn.onclick=()=>{activeSc=k;go();};
+    sg.appendChild(btn);
+  });
+}
+
+function renderETFList(){
+  const el=document.getElementById('etf-list');
+  el.innerHTML='';
+  ETF_UNIVERSE.forEach(e=>{
+    const s=etfState[e.id];
+    const div=document.createElement('div');
+    div.className='etf-item'+(s.active?' active':'');
+    div.onclick=(ev)=>{if(ev.target.tagName==='INPUT')return;s.active=!s.active;go();};
+    div.innerHTML=`
+      <div class="etf-check">${s.active?'✓':''}</div>
+      <div class="etf-info">
+        <div class="etf-ticker" style="color:${e.color}">${e.ticker}</div>
+        <div class="etf-name">${e.name}</div>
+      </div>
+      <div class="etf-weight-box">
+        <input class="etf-wt-input" type="number" min="0" max="100" step="1" value="${s.weight}"
+          ${s.active?'':'disabled'}
+          onclick="event.stopPropagation()"
+          oninput="etfState['${e.id}'].weight=Math.max(0,Math.min(100,+this.value));go()">
+        <span class="etf-wt">%</span>
+      </div>`;
+    el.appendChild(div);
+  });
+  const tot=totalWeight();
+  const warn=document.getElementById('wt-warn');
+  if(Math.abs(tot-100)>0.5){
+    warn.style.display='block';
+    warn.textContent=`Summe: ${fmt(tot,1)}% — bitte auf 100% anpassen`;
+  } else { warn.style.display='none'; }
+}
+
+function renderKPIs(sc,kap,entn,tax,speed){
+  const {med,p10}=simBand(sc,kap,entn,tax,speed);
+  const finalV=med[med.length-1].val;
+  const minV=Math.min(...med.map(p=>p.val));
+  const minYr=med.find(p=>p.val===minV)?.yr.toFixed(1)||'—';
+
+  let recYr=null;
+  let below=false;
+  for(const p of med){if(p.val<kap)below=true;if(below&&p.val>=kap){recYr=(p.yr-2024).toFixed(1);break;}}
+
+  document.getElementById('kv-start').textContent=fmtCHF(kap);
+  document.getElementById('kv-end').textContent=fmtCHF(finalV);
+  document.getElementById('kv-end-sub').textContent=fmtPct((finalV-kap)/kap)+' gesamt';
+  const eKpi=document.getElementById('kpi-end');
+  eKpi.className='kpi'+(finalV>=kap?' pos':' neg');
+
+  document.getElementById('kv-min').textContent=fmtCHF(minV);
+  document.getElementById('kv-min-sub').textContent=`~${minYr} · ${fmtPct((minV-kap)/kap)}`;
+  document.getElementById('kpi-min').className='kpi'+(minV>=kap?' pos':' neg');
+
+  document.getElementById('kv-rec').textContent=recYr?recYr+' J.':'kein Unterschr.';
+  document.getElementById('kv-ter').textContent=(weightedTER()*100).toFixed(2)+'%';
+
+  // Erwartete Rendite p.a. — aus dem wahrscheinlichkeitsgewichteten Erwartungspfad,
+  // ohne Entnahme gerechnet (reine Portfolio-Rendite, nicht durch Cashflows verzerrt)
+  const hor=parseInt(document.getElementById('sl-hor').value);
+  const {exp}=expectedPath(kap,0,tax,speed);
+  const finalE=exp[exp.length-1].val;
+  const annExp=Math.pow(finalE/kap,1/hor)-1;
+  const inf=parseFloat(document.getElementById('sl-inf').value)/100;
+  const realExp=(1+annExp)/(1+inf)-1;
+  const exEl=document.getElementById('kv-exret');
+  exEl.textContent=fmtPct(annExp);
+  const exKpi=document.getElementById('kpi-exret');
+  exKpi.className='kpi'+(annExp>=0?' pos':' neg');
+  document.getElementById('kv-exret-sub').textContent=`nominal · real ${fmtPct(realExp)}`;
+}
+
+function renderPhases(sc,speed){
+  const strip=document.getElementById('phase-strip');
+  strip.innerHTML='';
+  const colors=['#f87171','#fbbf24','#34d399','#4f8ef7'];
+  sc.phases.forEach((ph,i)=>{
+    if(sc.single&&i>0)return;
+    const r=blendReturn(ph);
+    const dur=sc.single?(+document.getElementById('sl-hor').value):ph.dur/speed;
+    const div=document.createElement('div');
+    div.className='phase-card';
+    div.innerHTML=`
+      <div class="phase-num" style="color:${colors[i]}">${sc.single?dur.toFixed(0):dur.toFixed(1)} J.</div>
+      <div class="phase-name">${sc.single?'Stabiles Umfeld':ph.name}</div>
+      <div class="phase-bar" style="background:${colors[i]};width:${Math.min(100,Math.abs(r)*400)}%"></div>
+      <div class="phase-ret" style="color:${r>=0?'#34d399':'#f87171'}">${fmtPct(r)} p.a. Portfolio</div>
+      <div class="phase-desc">${ph.desc}</div>`;
+    strip.appendChild(div);
+  });
+}
+
+function renderMainChart(sc,kap,entn,tax,speed){
+  const ctx=document.getElementById('cMain').getContext('2d');
+  if(charts.main) charts.main.destroy();
+  const {med,p10,p90}=simBand(sc,kap,entn,tax,speed);
+  let datasets=[],legHTML='';
+  const color=SCENARIOS[activeSc].color;
+  let labelSource=med;
+  let expCache=null;
+
+  if(activeTab==='erwartung'){
+    expCache=expectedPath(kap,entn,tax,speed);
+    const {exp,expP10,expP90,probs}=expCache;
+    labelSource=exp;
+    const expColor='#4f8ef7';
+    datasets=[
+      {label:'Erwartungspfad (gewichtet)',data:exp.map(p=>Math.round(p.val)),borderColor:expColor,borderWidth:3,pointRadius:0,pointHoverRadius:4,tension:0.4,fill:false},
+      {label:'Bestes Szenario',data:expP90.map(p=>Math.round(p.val)),borderColor:'#34d39955',borderWidth:0,pointRadius:0,tension:0.4,fill:'+1'},
+      {label:'Schlechtestes Szenario',data:expP10.map(p=>Math.round(p.val)),borderColor:'#f8717155',backgroundColor:expColor+'12',borderWidth:0,pointRadius:0,tension:0.4,fill:false},
+      {label:'Startkapital',data:Array(exp.length).fill(kap),borderColor:'#6b7280',borderWidth:1,borderDash:[3,4],pointRadius:0},
+    ];
+    const topP=Object.entries(probs).sort((a,b)=>b[1]-a[1])[0];
+    legHTML=`<span class="leg-i"><span class="leg-sq" style="background:${expColor}"></span>Erwartungspfad (alle Szenarien gewichtet)</span>
+    <span class="leg-i"><span class="leg-sq" style="background:#34d399;opacity:.4"></span>bestes</span>
+    <span class="leg-i"><span class="leg-sq" style="background:#f87171;opacity:.4"></span>schlechtestes Szenario</span>
+    <span class="leg-i"><span class="leg-dash" style="border-color:#6b7280"></span>Startkapital</span>`;
+  } else if(activeTab==='pfad'){
+    datasets=[
+      {label:'Median',data:med.map(p=>Math.round(p.val)),borderColor:color,borderWidth:2.5,pointRadius:0,pointHoverRadius:4,tension:0.4,fill:false},
+      {label:'P90 (optimistisch)',data:p90.map(p=>Math.round(p.val)),borderColor:color+'55',borderWidth:0,pointRadius:0,tension:0.4,fill:'+1'},
+      {label:'P10 (pessimistisch)',data:p10.map(p=>Math.round(p.val)),borderColor:color+'55',backgroundColor:color+'18',borderWidth:0,pointRadius:0,tension:0.4,fill:false},
+      {label:'Startkapital',data:Array(med.length).fill(kap),borderColor:'#6b7280',borderWidth:1,borderDash:[3,4],pointRadius:0},
+      {label:'Basis-Pfad',data:med.map(p=>Math.round(kap*Math.pow(1.065,p.yr-2024))),borderColor:'#4b5563',borderWidth:1,borderDash:[6,4],pointRadius:0},
+    ];
+    legHTML=`<span class="leg-i"><span class="leg-sq" style="background:${color}"></span>Median (falls ${SCENARIOS[activeSc].name} eintritt)</span>
+    <span class="leg-i"><span class="leg-sq" style="background:${color};opacity:.3"></span>P10–P90 Bandbreite</span>
+    <span class="leg-i"><span class="leg-dash" style="border-color:#6b7280"></span>Startkapital</span>
+    <span class="leg-i"><span class="leg-dash" style="border-color:#4b5563"></span>Basis-Pfad 6.5% p.a.</span>`;
+  } else if(activeTab==='rendite'){
+    const path=buildPath(sc,kap,entn,tax,speed);
+    const annRets=[];
+    let prev=kap;
+    path.forEach((p,i)=>{if(i===0)return;annRets.push(parseFloat(((p.val/prev-1)*100).toFixed(2)));prev=p.val;});
+    datasets=[
+      {label:'Quartalsrendite',data:annRets,borderColor:color,backgroundColor:annRets.map(r=>r>=0?color+'55':'#f87171'+'55'),borderWidth:1.5,pointRadius:0,tension:0.3,fill:true},
+      {label:'Nulllinie',data:Array(annRets.length).fill(0),borderColor:'#4b5563',borderWidth:1,borderDash:[3,3],pointRadius:0},
+    ];
+    legHTML=`<span class="leg-i"><span class="leg-sq" style="background:${color}"></span>Quartalsrendite</span>`;
+  } else if(activeTab==='asset'){
+    const etfs=activeETFs(); const tot=totalWeight();
+    datasets=etfs.map(e=>{
+      const wt=etfState[e.id].weight/tot;
+      const key=TYPE_RET_MAP[e.type]||'retEq';
+      const ph=sc.single?sc.phases[0]:sc.phases[0];
+      let val=kap*wt,yr=2024;
+      const pts=[{yr,val}];
+      const phases=sc.single?[{...ph,dur:+document.getElementById('sl-hor').value}]:sc.phases;
+      phases.forEach(p=>{
+        const ad=p.dur/speed;const m=Math.max(1,Math.round(ad*12));
+        const r=p[key]||0;const netR=r-e.ter-tax/100;const mR=Math.pow(1+netR,1/12)-1;
+        for(let mi=0;mi<m;mi++){val=Math.max(0,val*(1+mR)-entn/12*wt);yr+=1/12;if(mi%3===2||mi===m-1)pts.push({yr,val});}
+      });
+      return{label:`${e.ticker} (${(wt*100).toFixed(0)}%)`,data:pts.map(p=>Math.round(p.val)),borderColor:e.color,backgroundColor:e.color+'22',borderWidth:2,pointRadius:0,tension:0.35,fill:true};
+    });
+    legHTML=etfs.map(e=>`<span class="leg-i"><span class="leg-sq" style="background:${e.color}"></span>${e.ticker}</span>`).join('');
+  } else {
+    const inf=parseFloat(document.getElementById('sl-inf').value)/100;
+    const realMed=med.map(p=>({yr:p.yr,val:Math.round(p.val/Math.pow(1+inf,p.yr-2024))}));
+    const realP10=p10.map(p=>({yr:p.yr,val:Math.round(p.val/Math.pow(1+inf,p.yr-2024))}));
+    const realP90=p90.map(p=>({yr:p.yr,val:Math.round(p.val/Math.pow(1+inf,p.yr-2024))}));
+    datasets=[
+      {label:'Realwert Median',data:realMed.map(p=>p.val),borderColor:color,borderWidth:2.5,pointRadius:0,tension:0.4,fill:false},
+      {label:'P90',data:realP90.map(p=>p.val),borderColor:color+'44',borderWidth:0,pointRadius:0,tension:0.4,fill:'+1'},
+      {label:'P10',data:realP10.map(p=>p.val),borderColor:color+'44',backgroundColor:color+'15',borderWidth:0,pointRadius:0,tension:0.4,fill:false},
+      {label:'Kaufkraft Startkapital',data:med.map(p=>Math.round(kap)),borderColor:'#6b7280',borderWidth:1,borderDash:[3,4],pointRadius:0},
+    ];
+    legHTML=`<span class="leg-i"><span class="leg-sq" style="background:${color}"></span>Realwert (nach ${(inf*100).toFixed(1)}% Inflation)</span><span class="leg-i"><span class="leg-sq" style="background:${color};opacity:.3"></span>Bandbreite P10–P90</span>`;
+  }
+
+  const labels=labelSource.map(p=>p.yr.toFixed(1).replace(/\.0$/,''));
+  const yFmt=v=>v>=1e6?(v/1e6).toFixed(2)+' Mio.':(v/1000).toFixed(0)+'K';
+
+  charts.main=new Chart(ctx,{
+    type:'line',data:{labels,datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:i=>i.dataset.label&&i.dataset.label!=='Nulllinie'?`${i.dataset.label}: CHF ${yFmt(i.raw)}`:null}}},
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b7280',font:{size:9},maxTicksLimit:12}},
+        y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b7280',font:{size:9},callback:yFmt}}
+      },
+      interaction:{mode:'index',intersect:false}
+    }
+  });
+  document.getElementById('leg-main').innerHTML=legHTML;
+
+  // Insight
+  const terPct=(weightedTER()*100).toFixed(2);
+  const horTxt=document.getElementById('sl-hor').value;
+  if(activeTab==='erwartung'){
+    const {exp,expP10,expP90,probs}=expCache;
+    const finalE=exp[exp.length-1].val;
+    const finalBest=expP90[expP90.length-1].val;
+    const finalWorst=expP10[expP10.length-1].val;
+    const minE=Math.min(...exp.map(p=>p.val));
+    const negProb=(probs.zins+probs.stagfl+probs.krise+probs.chf)*100;
+    const annE=Math.pow(finalE/kap,1/parseInt(horTxt))-1;
+    document.getElementById('ins-main').innerHTML=
+      `<b>Erwartete Rendite:</b> ${fmtPct(annE)} p.a. (gewichtet über alle Szenarien) → Erwartungswert nach ${horTxt} Jahren: CHF ${fmtCHF(finalE)} (${fmtPct((finalE-kap)/kap)} gesamt). Keine garantierte Entwicklung. `+
+      `<b>Spannbreite:</b> im günstigsten Szenario CHF ${fmtCHF(finalBest)}, im ungünstigsten CHF ${fmtCHF(finalWorst)}. `+
+      `Die kumulierte Wahrscheinlichkeit eines Negativszenarios liegt bei ${negProb.toFixed(0)}% — entsprechend ${negProb<40?'leicht':'spürbar'} zieht es den Erwartungspfad nach unten, ohne dass ein Einbruch das Basisbild ist. `+
+      `TER: ${terPct}% p.a.`;
+  } else {
+    const finalV=med[med.length-1].val;
+    const minV=Math.min(...med.map(p=>p.val));
+    const minYr=med.find(p=>p.val===minV)?.yr.toFixed(1)||'—';
+    let recYr=null; let below=false;
+    for(const p of med){if(p.val<kap)below=true;if(below&&p.val>=kap){recYr=(p.yr-2024).toFixed(1);break;}}
+    const condPrefix = (activeTab==='pfad')?`<b>Bedingte Analyse — falls "${SCENARIOS[activeSc].name}" eintritt:</b> `:'';
+    document.getElementById('ins-main').innerHTML=
+      condPrefix+
+      `Endwert nach ${horTxt} Jahren: CHF ${fmtCHF(finalV)} (${fmtPct((finalV-kap)/kap)}). `+
+      `Tiefpunkt: CHF ${fmtCHF(minV)} (~${minYr}). `+
+      (recYr?`Rückkehr auf Startkapital: ~${recYr} Jahre. `:minV>=kap?'Startkapital nicht unterschritten. ':'')+
+      `TER-Kosten: ${terPct}% p.a. = CHF ${fmtCHF(kap*weightedTER())} im ersten Jahr.`+
+      (entn>0?` <b>Entnahme</b> CHF ${fmtCHF(entn)}/J. = ${((entn/kap)*100).toFixed(1)}% des Kapitals (4%-Regel: CHF ${fmtCHF(kap*.04)}).`:'');
+  }
+}
+
+function renderCompare(kap,entn,tax,speed){
+  const keys=Object.keys(SCENARIOS).filter(k=>k!=='basis');
+  const names=keys.map(k=>SCENARIOS[k].name);
+  const colors=keys.map(k=>SCENARIOS[k].color);
+
+  const losses=keys.map(k=>{
+    const{med}=simBand(SCENARIOS[k],kap,0,tax,speed);
+    const minV=Math.min(...med.map(p=>p.val));
+    return parseFloat(((kap-minV)/kap*100).toFixed(1));
+  });
+  // Echte Erholungsdauer: simuliert die Phasen und rechnet danach mit der
+  // Normalisierungs-Rendite (letzte Phase) weiter, bis das Startkapital wieder
+  // erreicht ist — Obergrenze 20 Jahre.
+  const recs=keys.map(k=>trueRecoveryYears(SCENARIOS[k],kap,entn,tax,speed));
+
+  const ctx2=document.getElementById('cLoss').getContext('2d');
+  if(charts.loss) charts.loss.destroy();
+  charts.loss=new Chart(ctx2,{type:'bar',data:{labels:names,datasets:[{label:'Verlust %',data:losses,backgroundColor:colors.map(c=>c+'99'),borderColor:colors,borderWidth:1,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b7280',font:{size:9},callback:v=>v+'%'},max:45},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:9}}}}}});
+
+  const ctx3=document.getElementById('cRec').getContext('2d');
+  if(charts.rec) charts.rec.destroy();
+  const recMax=Math.max(6,Math.ceil(Math.max(...recs.filter(r=>r<20))+1));
+  charts.rec=new Chart(ctx3,{type:'bar',data:{labels:names,datasets:[{label:'Jahre',data:recs,backgroundColor:colors.map(c=>c+'99'),borderColor:colors,borderWidth:1,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:i=>i.raw>=20?'> 20 J. (keine Erholung)':i.raw===0?'kein Unterschreiten':i.raw.toFixed(1)+' J.'}}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b7280',font:{size:9},callback:v=>v+'J.'},max:recMax,title:{display:true,text:'Jahre bis Startkapital wieder erreicht',color:'#6b7280',font:{size:9}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:9}}}}}});
+}
+
+/* Echte Erholungsdauer in Jahren: durchläuft die Szenario-Phasen (Median-Renditen),
+   und falls das Kapital am Ende der Phasen noch unter dem Start liegt, rechnet es
+   mit der Normalisierungs-Rendite (letzte Phase) monatlich weiter, bis das
+   Startkapital wieder erreicht ist. Obergrenze: 20 Jahre. */
+function trueRecoveryYears(sc,kap,entn,tax,speed){
+  const ter=weightedTER();
+  const phases=sc.single?[{...sc.phases[0],dur:parseInt(document.getElementById('sl-hor').value)}]:sc.phases;
+  let val=kap, t=0, below=false, recovered=null;
+  const mEntn=entn/12;
+  // 1) Phasen durchlaufen
+  for(const ph of phases){
+    const months=Math.max(1,Math.round((ph.dur/speed)*12));
+    const mRet=Math.pow(1+(blendReturn(ph)-ter-tax/100),1/12)-1;
+    for(let m=0;m<months;m++){
+      val=Math.max(0,val*(1+mRet)-mEntn);
+      t+=1/12;
+      if(val<kap) below=true;
+      if(below && val>=kap && recovered===null) recovered=t;
+    }
+  }
+  if(recovered!==null) return parseFloat(recovered.toFixed(1));
+  if(!below) return 0;                       // nie unter Start gefallen
+  // 2) Mit Normalisierungs-Rendite weiterrechnen bis Erholung oder 20 J.
+  const normPh=phases[phases.length-1];
+  const mRet=Math.pow(1+(blendReturn(normPh)-ter-tax/100),1/12)-1;
+  while(t<20 && val<kap){
+    val=Math.max(0,val*(1+mRet)-mEntn);
+    t+=1/12;
+  }
+  return val>=kap?parseFloat(t.toFixed(1)):20;
+}
+
+function renderSMI(){
+  const snb=parseFloat(document.getElementById('sl-snb').value);
+  const inf=parseFloat(document.getElementById('sl-inf').value);
+  const chf=parseFloat(document.getElementById('sl-chf').value);
+
+  const smiS=smiScore(snb,inf,chf,3);
+  const spiS=Math.min(100,Math.round(smiS*0.95+2));
+  const rr=(snb-inf).toFixed(2);
+
+  function scoreColor(s){return s<20?'#34d399':s<55?'#fbbf24':'#f87171';}
+  function scoreLabel(s){return s<20?'Kein Druck':s<55?'Erhöht':'Kritisch';}
+  function bar(s,c){return `<div style="height:4px;background:${c};width:${s}%;border-radius:2px;max-width:100%;margin:6px 0"></div>`;}
+
+  document.getElementById('smi-grid').innerHTML=`
+    <div style="background:var(--bg3);border-radius:10px;padding:14px;border:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px">
+        <span style="font-size:13px;font-weight:600">SMI</span>
+        <span style="font-size:18px;font-weight:600;color:${scoreColor(smiS)};font-variant-numeric:tabular-nums">${smiS}/100</span>
+      </div>
+      <div style="font-size:10px;color:#6b7280">Stand ~14'302 (17.8.26)</div>
+      ${bar(smiS,scoreColor(smiS))}
+      <div style="font-size:11px;font-weight:500;color:${scoreColor(smiS)}">${scoreLabel(smiS)}</div>
+      <div style="font-size:10px;color:#6b7280;margin-top:6px">Realzins CH: ${rr}%<br>EUR/CHF: ${chf.toFixed(3)}<br>Schwelle: 1.2% Realzins</div>
+    </div>
+    <div style="background:var(--bg3);border-radius:10px;padding:14px;border:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px">
+        <span style="font-size:13px;font-weight:600">SPI</span>
+        <span style="font-size:18px;font-weight:600;color:${scoreColor(spiS)};font-variant-numeric:tabular-nums">${spiS}/100</span>
+      </div>
+      <div style="font-size:10px;color:#6b7280">Stand ~20'181 (17.8.26)</div>
+      ${bar(spiS,scoreColor(spiS))}
+      <div style="font-size:11px;font-weight:500;color:${scoreColor(spiS)}">${scoreLabel(spiS)}</div>
+      <div style="font-size:10px;color:#6b7280;margin-top:6px">Inkl. Small/Mid Caps<br>CHF-Malus aktiv: ${chf<0.93?'ja (+'+Math.round((0.93-chf)*400)+' pts)':'nein'}<br>Schwelle: 1.4% Realzins</div>
+    </div>`;
+}
+
+
+/* ── PROBABILITY MODEL ── */
+/* Baseline priors calibrated to IWF/OECD Aug 2026: moderate growth ~3%,
+   downside risks from Middle East conflict, inflation ticking up then declining.
+   Base rates (12-month horizon) reflect consensus: soft landing most likely,
+   stagflation elevated due to energy shock, deep crisis low but non-trivial. */
+const BASE_PRIORS = { softl:0.34, basis:0.26, zins:0.16, stagfl:0.14, krise:0.06, chf:0.04 };
+
+function scenarioProbabilities(){
+  const snb=parseFloat(document.getElementById('sl-snb').value);
+  const ezb=parseFloat(document.getElementById('sl-ezb').value);
+  const fed=parseFloat(document.getElementById('sl-fed').value);
+  const inf=parseFloat(document.getElementById('sl-inf').value);
+  const chf=parseFloat(document.getElementById('sl-chf').value);
+
+  // Start from priors, then tilt by current parameter deviations from baseline
+  let p = {...BASE_PRIORS};
+
+  // Higher inflation raises stagflation & zins, lowers soft landing
+  const infDev = inf - 0.4;           // baseline CH CPI 0.4%
+  if(infDev > 0){
+    p.stagfl *= (1 + infDev*0.55);
+    p.zins   *= (1 + infDev*0.35);
+    p.softl  *= Math.max(0.2, 1 - infDev*0.25);
+    p.basis  *= Math.max(0.3, 1 - infDev*0.15);
+  } else {
+    p.softl  *= (1 + Math.abs(infDev)*0.2);
+  }
+
+  // Higher SNB rate raises zins scenario weight
+  const snbDev = snb - 0.0;
+  if(snbDev > 0){ p.zins *= (1 + snbDev*0.5); p.softl *= Math.max(0.3,1-snbDev*0.15); }
+
+  // Strong CHF (low EUR/CHF) raises CHF-shock probability
+  const chfDev = 0.938 - chf;         // positive = stronger franc
+  if(chfDev > 0){ p.chf *= (1 + chfDev*8); p.krise *= (1 + chfDev*3); }
+
+  // High Fed rate + high EZB = tighter global conditions, raises crisis/zins
+  if(fed > 5){ p.krise *= (1 + (fed-5)*0.3); p.zins *= (1 + (fed-5)*0.2); }
+  if(ezb > 4){ p.zins *= (1 + (ezb-4)*0.25); }
+
+  // Very low rates + low inflation = benign, boost soft landing & basis
+  if(inf < 1 && snb < 0.5 && fed < 4){ p.softl *= 1.2; p.basis *= 1.15; }
+
+  // Normalize to 100%
+  const sum = Object.values(p).reduce((a,b)=>a+b,0);
+  Object.keys(p).forEach(k=>p[k]=p[k]/sum);
+  return p;
+}
+
+function renderProbabilities(){
+  const probs = scenarioProbabilities();
+  const snb=parseFloat(document.getElementById('sl-snb').value);
+  const inf=parseFloat(document.getElementById('sl-inf').value);
+  const chf=parseFloat(document.getElementById('sl-chf').value);
+  const fed=parseFloat(document.getElementById('sl-fed').value);
+
+  // Sort by probability
+  const sorted = Object.entries(probs).sort((a,b)=>b[1]-a[1]);
+  const [topKey, topProb] = sorted[0];
+  const topSc = SCENARIOS[topKey];
+
+  // Likely banner
+  const banner = document.getElementById('likely-banner');
+  banner.style.background = topSc.color+'18';
+  banner.style.borderColor = topSc.color+'55';
+  const descMap = {
+    softl:'Der vorangegangene Straffungszyklus hat gewirkt: Die Inflation ist bereits gefallen. Weil keine Rezession nötig war, senken die Notenbanken die Zinsen nun wieder — die weiche Landung. Fallende Zinsen heben Anleihenkurse, stabiles Wachstum stützt Aktien. Günstigstes realistisches Umfeld.',
+    basis:'Graduelle Normalisierung ohne Schock. Zinsen und Inflation bewegen sich seitwärts auf moderatem Niveau. Stetige Renditen nahe dem historischen Mittel von ~6,5% p.a.',
+    zins:'Die Inflation steigt erneut, also erhöhen die Notenbanken die Zinsen zur Bekämpfung. Der Zinsanstieg belastet Anleihen und hochbewertete Aktien gleichzeitig. Erholung erst, wenn die Straffung greift — über ~3–4 Jahre.',
+    stagfl:'Die Zinserhöhungen bremsen die Inflation nicht wie erhofft — sie bleibt hartnäckig hoch, während die Wirtschaft stagniert. Hohe Zinsen treffen auf anhaltende Teuerung: Realverluste bei Anleihen, längste Erholungsdauer aller Szenarien.',
+    krise:'Ein exogener Schock (Finanz-, Geopolitik- oder Energiekrise) löst einen scharfen Markteinbruch aus. Notenbanken reagieren mit Zinssenkungen und Liquidität, was eine V-förmige Erholung ermöglicht. Staatsanleihen puffern den Aktiensturz ab.',
+    chf:'Kapitalflucht in den sicheren Hafen treibt den Franken nach oben. Die Aufwertung trifft die Exporteure. Kurzer, heftiger Einbruch, danach relativ rasche Erholung, sobald die SNB interveniert.'
+  };
+  // Dynamische Begründung der Eintretenswahrscheinlichkeit je nach aktueller Lage
+  const inf2=parseFloat(document.getElementById('sl-inf').value);
+  const snb2=parseFloat(document.getElementById('sl-snb').value);
+  const fed2=parseFloat(document.getElementById('sl-fed').value);
+  const rrCur=(snb2-inf2).toFixed(2);
+  function whyProb(k){
+    const parts=[];
+    if(k==='softl'){
+      parts.push(inf2<1.5?`tiefe Inflation (${inf2.toFixed(1)}%) lässt Zinssenkungsspielraum`:`Inflation ${inf2.toFixed(1)}% noch verträglich`);
+      parts.push(snb2<0.5?'SNB bereits bei ~0%':'moderates Zinsniveau');
+      parts.push('Konsens IWF/OECD sieht weiche Landung als Basisfall');
+    } else if(k==='basis'){
+      parts.push('kein akuter Inflations- oder Zinsschock in den Eingaben');
+      parts.push(`Realzins ${rrCur}% nahe neutral`);
+    } else if(k==='zins'){
+      parts.push(inf2>2?`steigende Inflation (${inf2.toFixed(1)}%) würde Straffung erzwingen`:`niedrige Inflation dämpft dieses Risiko`);
+      parts.push(fed2>4.5?`Fed noch restriktiv (${fed2.toFixed(2)}%)`:'globale Zinsen fallend');
+    } else if(k==='stagfl'){
+      parts.push(inf2>3?`hohe Inflation (${inf2.toFixed(1)}%) erhöht Stagflationsgefahr deutlich`:`Inflation ${inf2.toFixed(1)}% derzeit zu tief für Stagflation`);
+      parts.push('Nahost-Energiepreisrisiko hält Grundgewicht erhöht');
+    } else if(k==='krise'){
+      parts.push(fed2>5?`sehr restriktive Fed (${fed2.toFixed(2)}%) erhöht Schockrisiko`:'kein akuter Stressindikator aktiv');
+      parts.push('Basisrate für exogene Schocks bleibt strukturell bei ~5–6%');
+    } else if(k==='chf'){
+      parts.push(chf<0.90?`sehr starker Franken (${chf.toFixed(3)}) signalisiert Safe-Haven-Zuflüsse`:chf<0.93?`Franken relativ stark (${chf.toFixed(3)})`:`EUR/CHF ${chf.toFixed(3)} entspannt`);
+    }
+    return parts.join('; ');
+  }
+  banner.innerHTML = `
+    <div class="likely-head">
+      <span class="likely-title">Wahrscheinlichstes Szenario</span>
+      <span class="prob-badge" style="border-color:${topSc.color}66;color:${topSc.color}">
+        <span class="prob-dot" style="background:${topSc.color}"></span>${(topProb*100).toFixed(0)}% Eintretenswahrsch.
+      </span>
+    </div>
+    <div class="likely-name" style="color:${topSc.color}">${topSc.name}</div>
+    <div class="likely-desc">${descMap[topKey]}</div>`;
+
+  // Probability strip
+  const strip = document.getElementById('prob-strip');
+  strip.innerHTML='';
+  sorted.forEach(([k,pr],idx)=>{
+    const sc=SCENARIOS[k];
+    const div=document.createElement('div');
+    div.className='prob-item'+(idx===0?' top':'');
+    div.onclick=()=>{activeSc=k==='basis'?'basis':k;go();};
+    div.innerHTML=`
+      <div class="prob-left"><span class="prob-dot" style="background:${sc.color}"></span><span class="prob-name">${sc.name}</span></div>
+      <div class="prob-track"><div class="prob-fill" style="width:${(pr*100).toFixed(0)}%;background:${sc.color}"></div></div>
+      <div class="prob-pct" style="color:${sc.color}">${(pr*100).toFixed(0)}%</div>
+      <div class="prob-reason">${whyProb(k)}</div>`;
+    strip.appendChild(div);
+  });
+
+  // Driver grid — what's moving the probabilities
+  const rr=(snb-inf).toFixed(2);
+  const chfSignal = chf<0.90?'sehr stark':chf<0.93?'stark':chf<0.97?'moderat':'schwach';
+  const infSignal = inf<1?'tief':inf<2.5?'moderat':inf<4?'erhöht':'hoch';
+  document.getElementById('driver-grid').innerHTML=`
+    <div class="driver"><div class="driver-lbl">CH Realzins</div><div class="driver-val" style="color:${rr>1.2?'#f87171':'#34d399'}">${rr}%</div><div class="driver-note">Schwelle Aktiendruck: 1.2%</div></div>
+    <div class="driver"><div class="driver-lbl">Inflationssignal</div><div class="driver-val" style="color:${inf>2.5?'#fbbf24':'#34d399'}">${infSignal}</div><div class="driver-note">CPI ${inf.toFixed(1)}%</div></div>
+    <div class="driver"><div class="driver-lbl">CHF-Signal</div><div class="driver-val" style="color:${chf<0.93?'#a78bfa':'#34d399'}">${chfSignal}</div><div class="driver-note">EUR/CHF ${chf.toFixed(3)}</div></div>
+    <div class="driver"><div class="driver-lbl">Globale Zinsen</div><div class="driver-val" style="color:${fed>5?'#fbbf24':'#34d399'}">${fed>5?'restriktiv':fed>3.5?'neutral':'akkommod.'}</div><div class="driver-note">Fed ${fed.toFixed(2)}%</div></div>`;
+
+  // Insight
+  const secondKey = sorted[1][0];
+  const negProb = (probs.zins+probs.stagfl+probs.krise+probs.chf)*100;
+  document.getElementById('prob-insight').innerHTML=
+    `<b>Einordnung:</b> Auf Basis der aktuellen Eingaben ist "${topSc.name}" mit ${(topProb*100).toFixed(0)}% am wahrscheinlichsten, gefolgt von "${SCENARIOS[secondKey].name}" (${(sorted[1][1]*100).toFixed(0)}%). `+
+    `Die kumulierte Wahrscheinlichkeit eines Negativszenarios (Zinsschock, Stagflation, Krise oder CHF-Schock) liegt bei ${negProb.toFixed(0)}%. `+
+    `<b>Wichtig:</b> Diese Werte sind marktdaten-kalibrierte Schätzungen (IWF/OECD-Konsens), keine Prognosen — bewege die Makro-Regler links, um die Sensitivität zu sehen.`;
+}
+
+function switchTab(t,el){
+  activeTab=t;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  go();
+}
+
+/* ══════════════ OUTPERFORMANCE PORTFOLIO ══════════════ */
+/* Renditeoptimiertes Vergleichsportfolio: höherer Aktienanteil + Faktor-Tilts.
+   Erwartungswerte kalibriert auf langfristige akademische Faktorprämien
+   (Quality, Momentum, Size) — mit dem ausdrücklichen Vorbehalt, dass
+   Faktoren über Jahre unterperformen können (Small Caps seit 2020, siehe App-Hinweis). */
+const OP_HOLDINGS = [
+  {ticker:'IWQU', name:'iShares MSCI World Quality Factor', isin:'IE00BP3QZ601', wt:28, expRet:0.088, vol:0.155, color:'#4f8ef7', note:'Quality-Prämie: hohe Eigenkapitalrendite, stabile Gewinne'},
+  {ticker:'IWMO', name:'iShares MSCI World Momentum Factor', isin:'IE00BP3QZ825', wt:20, expRet:0.095, vol:0.175, color:'#a78bfa', note:'Momentum-Prämie: Titel mit positivem Kurstrend'},
+  {ticker:'WSML', name:'iShares MSCI World Small Cap',        isin:'IE00BF4RFH31', wt:14, expRet:0.090, vol:0.185, color:'#fb923c', note:'Size-Prämie: kleinere Firmen, langfristig höhere Rendite'},
+  {ticker:'VWCE', name:'Vanguard FTSE All-World (Kern)',      isin:'IE00B3RBWM25', wt:18, expRet:0.080, vol:0.150, color:'#60a5fa', note:'Breiter Marktkern als Basis'},
+  {ticker:'VFEM', name:'Vanguard FTSE Emerging Markets',      isin:'IE00B3VVMM84', wt:8,  expRet:0.095, vol:0.210, color:'#f43f5e', note:'Schwellenländer: höheres Wachstum, höheres Risiko'},
+  {ticker:'CORP', name:'iShares Global Corp. Bond (Hedged)',  isin:'IE00B7J7TB45', wt:8,  expRet:0.040, vol:0.055, color:'#fbbf24', note:'Anleihen-Puffer, reduziert vs. Norwegerfonds'},
+  {ticker:'TRET', name:'VanEck Global Real Estate',           isin:'NL0009690239', wt:4,  expRet:0.060, vol:0.170, color:'#e87ba4', note:'Immobilien-Diversifikation'},
+];
+
+const GPFG_EXP_RET = 0.063;  // Norwegerfonds langfristige Nominalrendite ~6,3%
+const GPFG_VOL = 0.115;
+
+function opBlendReturn(){
+  const tot=OP_HOLDINGS.reduce((s,h)=>s+h.wt,0);
+  return OP_HOLDINGS.reduce((s,h)=>s+h.expRet*(h.wt/tot),0);
+}
+function opBlendVol(){
+  // Vereinfachte Portfolio-Vola: gewichtete Vola × Diversifikationsfaktor 0.82
+  const tot=OP_HOLDINGS.reduce((s,h)=>s+h.wt,0);
+  const wSum=OP_HOLDINGS.reduce((s,h)=>s+h.vol*(h.wt/tot),0);
+  return wSum*0.82;
+}
+
+function refreshOpDate(){
+  const d=new Date();
+  const opts={day:'2-digit',month:'long',year:'numeric'};
+  document.getElementById('op-date').textContent='Stand: '+d.toLocaleDateString('de-CH',opts);
+}
+
+function renderOutperformance(){
+  const kap=parseInt(document.getElementById('sl-kap').value);
+  const tax=parseFloat(document.getElementById('sl-tax').value);
+  const opRet=opBlendReturn();
+  const opVol=opBlendVol();
+  const netOpRet=opRet-0.0028-tax/100; // gewichteter TER ~0.28%
+  const excess=netOpRet-GPFG_EXP_RET;
+
+  // Max drawdown Schätzung: ~2.2× Jahresvola im schweren Stressfall
+  const maxDD=opVol*2.2;
+
+  document.getElementById('op-ret').textContent=(netOpRet*100).toFixed(1)+'%';
+  document.getElementById('op-vs').textContent=(excess>=0?'+':'')+(excess*100).toFixed(1)+'%';
+  document.getElementById('op-vs').style.color=excess>=0?'#34d399':'#f87171';
+  document.getElementById('op-vs-sub').textContent=`vs. GPFG ${(GPFG_EXP_RET*100).toFixed(1)}% p.a.`;
+  document.getElementById('op-vol').textContent=(opVol*100).toFixed(1)+'%';
+  document.getElementById('op-dd').textContent='−'+(maxDD*100).toFixed(0)+'%';
+
+  // Warnung
+  const meetsTarget=netOpRet>=0.05;
+  document.getElementById('op-warn').innerHTML=
+    `<b>Wichtiger Hinweis:</b> Die ${(netOpRet*100).toFixed(1)}% sind eine <b>erwartete</b> Langfristrendite auf Basis historischer Faktorprämien — keine Zusage. `+
+    `Dieses Portfolio trägt mit ~${(opVol*100).toFixed(0)}% Volatilität deutlich mehr Risiko als der Norwegerfonds (~${(GPFG_VOL*100).toFixed(0)}%) und kann in einem Krisenjahr bis zu ~${(maxDD*100).toFixed(0)}% verlieren. `+
+    `Faktor-Tilts (v.a. Small Caps) können über Jahre unterperformen. Dies ist ein Modell, keine Anlageberatung.`;
+
+  // Holdings-Tabelle
+  const tot=OP_HOLDINGS.reduce((s,h)=>s+h.wt,0);
+  const rows=OP_HOLDINGS.map(h=>`
+    <tr>
+      <td><span class="holding-tkr" style="color:${h.color}">${h.ticker}</span></td>
+      <td>${h.name}<div style="font-size:10px;color:var(--muted);margin-top:1px">${h.note}</div></td>
+      <td class="data-date">${h.isin}</td>
+      <td style="text-align:right"><span style="font-family:var(--mono)">${(h.expRet*100).toFixed(1)}%</span></td>
+      <td class="wt-cell holding-wt" style="color:${h.color}">${h.wt}%<div class="wt-bar" style="width:${h.wt*1.6}px;background:${h.color}"></div></td>
+    </tr>`).join('');
+  document.getElementById('op-holdings').innerHTML=
+    `<thead><tr><th>Ticker</th><th>Fonds</th><th>ISIN</th><th style="text-align:right">Erw. Rendite</th><th style="text-align:right">Gewicht</th></tr></thead><tbody>${rows}</tbody>
+     <tfoot><tr><td colspan="3" style="padding-top:12px;font-weight:500">Portfolio gesamt (${tot}%)</td>
+     <td style="text-align:right;padding-top:12px;font-family:var(--mono);font-weight:500;color:#34d399">${(opRet*100).toFixed(1)}%</td>
+     <td style="text-align:right;padding-top:12px;font-family:var(--mono);font-weight:500">100%</td></tr></tfoot>`;
+
+  // Vergleichschart
+  const ctx1=document.getElementById('opCompChart').getContext('2d');
+  if(charts.opComp) charts.opComp.destroy();
+  charts.opComp=new Chart(ctx1,{
+    type:'bar',
+    data:{labels:['Norwegerfonds (GPFG)','Outperformance-Portfolio'],
+      datasets:[{label:'Erw. Rendite p.a.',data:[(GPFG_EXP_RET*100),(netOpRet*100)],backgroundColor:['#4f8ef799','#34d39999'],borderColor:['#4f8ef7','#34d399'],borderWidth:1,borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:i=>i.raw.toFixed(1)+'% p.a.'}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b7280',font:{size:9},callback:v=>v+'%'},max:8,title:{display:true,text:'Erwartete Rendite p.a.',color:'#6b7280',font:{size:10}}}}}
+  });
+
+  // Wachstumschart 10 Jahre
+  const ctx2=document.getElementById('opGrowthChart').getContext('2d');
+  if(charts.opGrowth) charts.opGrowth.destroy();
+  const yrs=Array.from({length:11},(_,i)=>2024+i);
+  const gpfgPath=yrs.map((_,i)=>Math.round(kap*Math.pow(1+GPFG_EXP_RET,i)));
+  const opPath=yrs.map((_,i)=>Math.round(kap*Math.pow(1+netOpRet,i)));
+  charts.opGrowth=new Chart(ctx2,{
+    type:'line',
+    data:{labels:yrs.map(String),datasets:[
+      {label:'Outperformance',data:opPath,borderColor:'#34d399',backgroundColor:'#34d39918',borderWidth:2.5,pointRadius:0,tension:0.3,fill:true},
+      {label:'Norwegerfonds',data:gpfgPath,borderColor:'#4f8ef7',borderWidth:2,borderDash:[5,4],pointRadius:0,tension:0.3,fill:false},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:i=>`${i.dataset.label}: CHF ${i.raw>=1e6?(i.raw/1e6).toFixed(2)+' Mio.':(i.raw/1000).toFixed(0)+'K'}`}}},
+      scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b7280',font:{size:9},maxTicksLimit:6}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b7280',font:{size:9},callback:v=>v>=1e6?(v/1e6).toFixed(1)+'M':(v/1000).toFixed(0)+'K'}}},
+      interaction:{mode:'index',intersect:false}}
+  });
+
+  const finalOp=opPath[opPath.length-1], finalGpfg=gpfgPath[gpfgPath.length-1];
+  document.getElementById('op-howto').innerHTML=
+    `Alle sieben ETFs sind an der SIX Swiss Exchange oder über Xetra in CHF/EUR handelbar (Broker z.B. Swissquote, Saxo). `+
+    `<b>Rebalancing:</b> einmal jährlich zurück auf die Zielgewichte — genau wie beim Norwegerfonds. `+
+    `<b>Nach 10 Jahren</b> (bei den erwarteten Renditen, ohne Schwankung): Outperformance-Portfolio ~CHF ${(finalOp/1e6).toFixed(2)} Mio. gegenüber Norwegerfonds ~CHF ${(finalGpfg/1e6).toFixed(2)} Mio. — ein Unterschied von rund CHF ${((finalOp-finalGpfg)/1000).toFixed(0)}'000. `+
+    `Dieser Vorsprung ist der erwartete Lohn für das höhere Risiko und stellt sich nur ein, wenn die Faktorprämien über den Zeitraum tatsächlich anfallen. `+
+    `<b>Tagesaktualität:</b> Die erwarteten Renditen basieren auf langfristigen Faktorprämien und ändern sich nicht täglich; für tagesaktuelle Kurse und Gewichte die ETFs beim Broker prüfen und den Daten-Stempel oben aktualisieren.`;
+}
+
+function switchView(v){
+  document.getElementById('vt-sim').classList.toggle('on',v==='sim');
+  document.getElementById('vt-op').classList.toggle('on',v==='op');
+  document.getElementById('panel-sim').classList.toggle('on',v==='sim');
+  document.getElementById('panel-op').classList.toggle('on',v==='op');
+  if(v==='op'){ refreshOpDate(); renderOutperformance(); }
+}
+
+/* ── MAIN GO ── */
+function go(){
+  const kap=parseInt(document.getElementById('sl-kap').value);
+  const entn=parseInt(document.getElementById('sl-entn').value);
+  const hor=parseInt(document.getElementById('sl-hor').value);
+  const tax=parseFloat(document.getElementById('sl-tax').value);
+  const snb=parseFloat(document.getElementById('sl-snb').value);
+  const ezb=parseFloat(document.getElementById('sl-ezb').value);
+  const fed=parseFloat(document.getElementById('sl-fed').value);
+  const inf=parseFloat(document.getElementById('sl-inf').value);
+  const chf=parseFloat(document.getElementById('sl-chf').value);
+  const spd=parseFloat(document.getElementById('sl-spd').value);
+
+  document.getElementById('cv-kap').textContent=new Intl.NumberFormat('de-CH').format(kap);
+  document.getElementById('cv-entn').textContent=entn>0?new Intl.NumberFormat('de-CH').format(entn):'0';
+  document.getElementById('cv-hor').textContent=hor+' J.';
+  document.getElementById('cv-tax').textContent=tax.toFixed(1)+'%';
+  document.getElementById('cv-snb').textContent=snb.toFixed(2)+'%';
+  document.getElementById('cv-ezb').textContent=ezb.toFixed(2)+'%';
+  document.getElementById('cv-fed').textContent=fed.toFixed(2)+'%';
+  document.getElementById('cv-inf').textContent=inf.toFixed(1)+'%';
+  document.getElementById('cv-chf').textContent=chf.toFixed(3);
+  document.getElementById('cv-spd').textContent=speedLabel(spd);
+
+  const sc=SCENARIOS[activeSc];
+  renderETFList();
+  renderSidebar();
+  if(totalWeight()>0 && Math.abs(totalWeight()-100)<1){
+    renderKPIs(sc,kap,entn,tax,spd);
+    renderPhases(sc,spd);
+    renderMainChart(sc,kap,entn,tax,spd);
+    renderCompare(kap,entn,tax,spd);
+  }
+  renderProbabilities();
+  renderSMI();
+}
+
+go();
+</script>
+</body>
+</html>
