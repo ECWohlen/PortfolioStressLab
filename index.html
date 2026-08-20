@@ -424,6 +424,7 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
   <div class="view-tabs">
     <button class="view-tab on" id="vt-sim" onclick="switchView('sim')">Szenario-Simulation</button>
     <button class="view-tab" id="vt-op" onclick="switchView('op')">Outperformance-Portfolio</button>
+    <button class="view-tab" id="vt-sc" onclick="switchView('sc')">Schuldenresilienz-Portfolio</button>
   </div>
 
   <div class="view-panel on" id="panel-sim">
@@ -593,6 +594,80 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
     </div>
 
   </div><!-- /panel-op -->
+
+  <!-- ══════════════ PANEL 3: SCHULDENRESILIENZ ══════════════ -->
+  <div class="view-panel" id="panel-sc">
+
+    <div class="op-hero">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+        <div>
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Schuldenresilienz-Portfolio</div>
+          <div style="font-size:20px;font-weight:600;margin:4px 0">Schutz vor US-Schuldenspirale — Ziel ≥5% p.a.</div>
+          <div style="font-size:12px;color:#9ca3af;line-height:1.6;max-width:580px">Konstruiert für das Neutralszenario (55–60%) und Negativszenario (10–15%) der US-Staatsverschuldung. Gold, Inflationsschutz, Sachwerte und kurze Duration ersetzen langlaufende Nominalanleihen. Aktienanteil bleibt für Renditepotenzial erhalten — aber defensiv über Quality-Tilt.</div>
+        </div>
+        <div style="text-align:right">
+          <div class="data-date" id="sc-date">Stand: —</div>
+        </div>
+      </div>
+      <div class="op-hero-grid">
+        <div class="op-stat"><div class="op-stat-lbl">Erwartete Rendite</div><div class="op-stat-val" id="sc-ret" style="color:#34d399">—</div><div class="op-stat-sub">p.a. nominal</div></div>
+        <div class="op-stat"><div class="op-stat-lbl">Realrendite (nach Infl.)</div><div class="op-stat-val" id="sc-real" style="color:#4f8ef7">—</div><div class="op-stat-sub" id="sc-real-sub">nach CPI</div></div>
+        <div class="op-stat"><div class="op-stat-lbl">Erw. Volatilität</div><div class="op-stat-val" id="sc-vol" style="color:#fbbf24">—</div><div class="op-stat-sub">Schwankung p.a.</div></div>
+        <div class="op-stat"><div class="op-stat-lbl">Krisen-Drawdown</div><div class="op-stat-val" id="sc-dd" style="color:#f87171">—</div><div class="op-stat-sub">Negativszenario</div></div>
+        <div class="op-stat"><div class="op-stat-lbl">USD-Exposure</div><div class="op-stat-val" id="sc-usd" style="color:#a78bfa">—</div><div class="op-stat-sub">vs. ~65% Norwegerfonds</div></div>
+        <div class="op-stat"><div class="op-stat-lbl">Duration Anleihen</div><div class="op-stat-val" id="sc-dur" style="color:#34d399">—</div><div class="op-stat-sub">vs. ~7J Norwegerfonds</div></div>
+      </div>
+    </div>
+
+    <!-- Warum-Erklärung -->
+    <div class="card">
+      <div class="card-head"><span class="card-title">Portfolio-Konstruktion: Was schützt wovor?</span></div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px" id="sc-why-grid"></div>
+      </div>
+    </div>
+
+    <!-- Holdings -->
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">Portfolio-Zusammensetzung</span>
+        <span style="font-size:10px;color:var(--muted)">8 Positionen · alle als UCITS-ETF an der SIX Swiss Exchange handelbar</span>
+      </div>
+      <div class="card-body">
+        <table class="holding-table" id="sc-holdings"></table>
+      </div>
+    </div>
+
+    <!-- Szenario-Stresstest -->
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">Stresstest: Portfolio-Verhalten in den 3 US-Schuldenszenarien</span>
+      </div>
+      <div class="card-body">
+        <div style="position:relative;width:100%;height:250px">
+          <canvas id="scStressChart" role="img" aria-label="Stresstest US-Schuldenszenarien"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dreier-Vergleich -->
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">Direktvergleich: Norwegerfonds · Outperformance · Schuldenresilienz</span>
+        <span style="font-size:10px;color:var(--muted)">CHF 2.5 Mio. · 10 Jahre · erwartete Medianpfade</span>
+      </div>
+      <div class="card-body">
+        <div class="leg" id="sc-leg"></div>
+        <div style="position:relative;width:100%;height:280px">
+          <canvas id="scCompareChart" role="img" aria-label="Direktvergleich der drei Portfolios"></canvas>
+        </div>
+        <div class="insight" id="sc-insight"></div>
+      </div>
+    </div>
+
+    <div class="op-warn" id="sc-warn"></div>
+
+  </div><!-- /panel-sc -->
 
   <div style="font-size:10px;color:var(--muted);text-align:center;padding:8px 0">
     Portfolio Stress Lab · Simulation auf Basis historischer Analogien · Keine Anlageberatung · Alle Angaben in CHF
@@ -1359,12 +1434,218 @@ function renderOutperformance(){
 }
 
 function switchView(v){
-  document.getElementById('vt-sim').classList.toggle('on',v==='sim');
-  document.getElementById('vt-op').classList.toggle('on',v==='op');
-  document.getElementById('panel-sim').classList.toggle('on',v==='sim');
-  document.getElementById('panel-op').classList.toggle('on',v==='op');
+  ['sim','op','sc'].forEach(id=>{
+    document.getElementById('vt-'+id).classList.toggle('on',v===id);
+    document.getElementById('panel-'+id).classList.toggle('on',v===id);
+  });
   if(v==='op'){ refreshOpDate(); renderOutperformance(); }
+  if(v==='sc'){ renderSchutz(); }
 }
+
+/* ══════════════ SCHULDENRESILIENZ-PORTFOLIO ══════════════ */
+const SC_HOLDINGS = [
+  {ticker:'IWQU', name:'iShares MSCI World Quality Factor',         isin:'IE00BP3QZ601', wt:25, ter:0.0030, expRet:0.085, vol:0.155, usdEx:0.68, color:'#4f8ef7',
+   why:'Quality-Unternehmen (hohe EK-Rendite, stabile Gewinne) sind zinsresilienter als Growth-Titel. Wenn Kapital teurer wird, gewinnen Firmen mit starker Bilanz.', layer:'Aktien'},
+  {ticker:'CHDVD',name:'iShares Swiss Dividend ETF',                isin:'CH0019852802', wt:8,  ter:0.0015, expRet:0.055, vol:0.120, usdEx:0.02, color:'#f43f5e',
+   why:'CHF ist historisch stärkste Safe-Haven-Währung bei USD-Schwäche. Schweizer Dividendentitel liefern Rendite und natürlichen Währungsschutz.', layer:'Aktien CH'},
+  {ticker:'VFEM', name:'Vanguard FTSE Emerging Markets UCITS ETF',  isin:'IE00B3VVMM84', wt:7,  ter:0.0022, expRet:0.090, vol:0.210, usdEx:0.30, color:'#fb923c',
+   why:'Schwellenländer profitieren strukturell von USD-Schwäche. Rohstoffreiche EMs gewinnen, wenn die USA Reservestatus verlieren.', layer:'Aktien EM'},
+  {ticker:'ZGLD', name:'ZKB Gold ETF (CHF hedged)',                  isin:'CH0047533523', wt:15, ter:0.0040, expRet:0.045, vol:0.150, usdEx:0.00, color:'#eab308',
+   why:'Gold ist der ultimative Hedge gegen Vertrauensverlust in Fiatwährungen. Bei jeder historischen Schulden-/Währungskrise wertet Gold massiv auf. Kernposition.', layer:'Gold'},
+  {ticker:'IBCI', name:'iShares € Inflation Linked Govt Bond UCITS', isin:'IE00B0M62X26', wt:15, ter:0.0009, expRet:0.035, vol:0.080, usdEx:0.00, color:'#34d399',
+   why:'Inflationsgebundene Anleihen (Linker) steigen real mit der Inflation. Kein Duration-Risiko wie Nominalanleihen — schützt vor dem Hauptrisiko im Neutralszenario.', layer:'IL-Anleihen'},
+  {ticker:'CORE', name:'iShares Global Infrastructure UCITS ETF',    isin:'IE00B1FZS467', wt:10, ter:0.0065, expRet:0.070, vol:0.140, usdEx:0.45, color:'#a78bfa',
+   why:'Infrastruktur (Maut, Energie, Wasser) hat staatlich regulierte, inflationsgebundene Cashflows. Geringe Korrelation zu Aktien und Anleihen.', layer:'Sachwerte'},
+  {ticker:'TRET', name:'VanEck Global Real Estate UCITS ETF',        isin:'NL0009690239', wt:8,  ter:0.0025, expRet:0.060, vol:0.170, usdEx:0.50, color:'#e87ba4',
+   why:'Immobilien als Sachwert: Mieten werden mit Inflation angepasst. Diversifikation weg von reinen Finanztiteln.', layer:'Sachwerte'},
+  {ticker:'IBTS', name:'iShares $ Treasury Bond 1-3yr UCITS ETF',   isin:'IE00B14X4T88', wt:12, ter:0.0007, expRet:0.045, vol:0.030, usdEx:1.00, color:'#60a5fa',
+   why:'Kurzläufer (1–3 Jahre) sind fast immun gegen Zinserhöhungen. Liquiditätspuffer und Rendite ohne Zinsrisiko. Bei USD-Krise: Umschichten in ZGLD oder CHDVD.', layer:'Kurzläufer'},
+];
+
+const SC_USD_WEIGHT = 0; // berechnet dynamisch
+const SC_AVG_DURATION = 2.0; // in Jahren (domn. von IBTS + IBCI)
+
+// Scenario returns für Stresstest (alle 3 US-Schulden-Szenarien × 8 ETF-Typen)
+const DEBT_SCENARIOS = {
+  negativ:{
+    label:'Negativ — Vertrauensverlust (10–15%)',
+    color:'#f87171',
+    ret:{IWQU:-.12, CHDVD:.02, VFEM:.04, ZGLD:.35, IBCI:.05, CORE:-.08, TRET:-.15, IBTS:.02}
+  },
+  neutral:{
+    label:'Neutral — Weiter so (55–60%)',
+    color:'#fbbf24',
+    ret:{IWQU:.08, CHDVD:.055, VFEM:.09, ZGLD:.045, IBCI:.035, CORE:.07, TRET:.06, IBTS:.045}
+  },
+  positiv:{
+    label:'Positiv — Produktivitätsausweg (25–30%)',
+    color:'#34d399',
+    ret:{IWQU:.11, CHDVD:.06, VFEM:.12, ZGLD:.01, IBCI:.025, CORE:.08, TRET:.08, IBTS:.04}
+  }
+};
+
+function scBlendRet(scKey){
+  const tot=SC_HOLDINGS.reduce((s,h)=>s+h.wt,0);
+  return SC_HOLDINGS.reduce((s,h)=>s+DEBT_SCENARIOS[scKey].ret[h.ticker]*(h.wt/tot),0);
+}
+
+function scExpectedRet(){
+  return scBlendRet('negativ')*0.125 + scBlendRet('neutral')*0.575 + scBlendRet('positiv')*0.275 - 0.0024;
+}
+
+function scVol(){
+  const tot=SC_HOLDINGS.reduce((s,h)=>s+h.wt,0);
+  return SC_HOLDINGS.reduce((s,h)=>s+h.vol*(h.wt/tot),0)*0.79;
+}
+
+function scUsdExposure(){
+  const tot=SC_HOLDINGS.reduce((s,h)=>s+h.wt,0);
+  return SC_HOLDINGS.reduce((s,h)=>s+h.usdEx*(h.wt/tot),0);
+}
+
+function renderSchutz(){
+  const kap=parseInt(document.getElementById('sl-kap').value)||2500000;
+  const inf=parseFloat(document.getElementById('sl-inf').value)||0.4;
+
+  const d=new Date();
+  document.getElementById('sc-date').textContent='Stand: '+d.toLocaleDateString('de-CH',{day:'2-digit',month:'long',year:'numeric'});
+
+  const ret=scExpectedRet();
+  const vol=scVol();
+  const real=(1+ret)/(1+inf/100)-1;
+  const dd=vol*1.85;
+  const usd=scUsdExposure();
+
+  document.getElementById('sc-ret').textContent=(ret*100).toFixed(1)+'%';
+  document.getElementById('sc-real').textContent=(real*100).toFixed(1)+'%';
+  document.getElementById('sc-real-sub').textContent=`nach ${inf.toFixed(1)}% CPI`;
+  document.getElementById('sc-vol').textContent=(vol*100).toFixed(1)+'%';
+  document.getElementById('sc-dd').textContent='−'+(dd*100).toFixed(0)+'%';
+  document.getElementById('sc-usd').textContent=(usd*100).toFixed(0)+'%';
+  document.getElementById('sc-dur').textContent='~'+SC_AVG_DURATION+' J.';
+
+  // Why-Grid (Layer-Karten)
+  const layers = {};
+  SC_HOLDINGS.forEach(h=>{if(!layers[h.layer])layers[h.layer]={holdings:[],color:h.color};layers[h.layer].holdings.push(h);});
+  const layerColors={'Aktien':'#4f8ef7','Aktien CH':'#f43f5e','Aktien EM':'#fb923c','Gold':'#eab308','IL-Anleihen':'#34d399','Sachwerte':'#a78bfa','Kurzläufer':'#60a5fa'};
+  const whyGrid=document.getElementById('sc-why-grid');
+  whyGrid.innerHTML='';
+  const uniqueLayers=[...new Set(SC_HOLDINGS.map(h=>h.layer))];
+  uniqueLayers.forEach(layer=>{
+    const lh=SC_HOLDINGS.filter(h=>h.layer===layer);
+    const totWt=lh.reduce((s,h)=>s+h.wt,0);
+    const lc=layerColors[layer]||'#888';
+    const div=document.createElement('div');
+    div.style.cssText=`background:var(--bg3);border:1px solid ${lc}44;border-radius:10px;padding:10px 12px`;
+    div.innerHTML=`<div style="font-size:10px;font-weight:500;color:${lc};margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">${layer} · ${totWt}%</div>
+      <div style="font-size:10px;color:var(--muted);line-height:1.5">${lh[0].why}</div>
+      <div style="margin-top:6px;font-size:10px;color:${lc};font-family:var(--mono)">${lh.map(h=>h.ticker).join(' + ')}</div>`;
+    whyGrid.appendChild(div);
+  });
+
+  // Holdings-Tabelle
+  const tot=SC_HOLDINGS.reduce((s,h)=>s+h.wt,0);
+  const rows=SC_HOLDINGS.map(h=>`<tr>
+    <td><span class="holding-tkr" style="color:${h.color}">${h.ticker}</span></td>
+    <td>${h.name}<div style="font-size:9px;color:var(--muted);margin-top:1px">${h.layer}</div></td>
+    <td class="data-date">${h.isin}</td>
+    <td style="text-align:right;font-family:var(--mono)">${(h.ter*100).toFixed(2)}%</td>
+    <td style="text-align:right;font-family:var(--mono);color:#34d399">${(h.expRet*100).toFixed(1)}%</td>
+    <td class="wt-cell holding-wt" style="color:${h.color}">${h.wt}%<div class="wt-bar" style="width:${h.wt*1.6}px;background:${h.color}"></div></td>
+  </tr>`).join('');
+  document.getElementById('sc-holdings').innerHTML=
+    `<thead><tr><th>Ticker</th><th>Fonds</th><th>ISIN</th><th style="text-align:right">TER</th><th style="text-align:right">Erw. Rendite</th><th style="text-align:right">Gewicht</th></tr></thead>
+     <tbody>${rows}</tbody>
+     <tfoot><tr><td colspan="3" style="padding-top:10px;font-weight:500">Gesamt</td>
+     <td style="text-align:right;padding-top:10px;font-family:var(--mono)">0.24%</td>
+     <td style="text-align:right;padding-top:10px;font-family:var(--mono);font-weight:500;color:#34d399">${(ret*100+0.24).toFixed(1)}%</td>
+     <td style="text-align:right;padding-top:10px;font-family:var(--mono);font-weight:500">100%</td></tr></tfoot>`;
+
+  // Stresstest-Chart
+  const ctx1=document.getElementById('scStressChart').getContext('2d');
+  if(charts.scStress) charts.scStress.destroy();
+  const scKeys=['negativ','neutral','positiv'];
+  const stressData=SC_HOLDINGS.map(h=>({
+    ticker:h.ticker,
+    neg: DEBT_SCENARIOS.negativ.ret[h.ticker]*h.wt/tot*100,
+    neu: DEBT_SCENARIOS.neutral.ret[h.ticker]*h.wt/tot*100,
+    pos: DEBT_SCENARIOS.positiv.ret[h.ticker]*h.wt/tot*100,
+    color:h.color
+  }));
+  charts.scStress=new Chart(ctx1,{
+    type:'bar',
+    data:{
+      labels:SC_HOLDINGS.map(h=>h.ticker),
+      datasets:[
+        {label:'Negativ (Vertrauensverlust)',data:stressData.map(d=>parseFloat(d.neg.toFixed(2))),backgroundColor:'#f8717166',borderColor:'#f87171',borderWidth:1,borderRadius:3},
+        {label:'Neutral (Weiter so)',        data:stressData.map(d=>parseFloat(d.neu.toFixed(2))),backgroundColor:'#fbbf2466',borderColor:'#fbbf24',borderWidth:1,borderRadius:3},
+        {label:'Positiv (Produktivität)',    data:stressData.map(d=>parseFloat(d.pos.toFixed(2))),backgroundColor:'#34d39966',borderColor:'#34d399',borderWidth:1,borderRadius:3},
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:10,boxHeight:10,padding:12,font:{size:10},color:'#9ca3af'}},
+        tooltip:{mode:'index',intersect:false,callbacks:{label:i=>`${i.dataset.label}: ${i.raw>0?'+':''}${i.raw}% Beitrag zum Portfolio`}}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:9}}},
+        y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b7280',font:{size:9},callback:v=>v+'%'},
+          title:{display:true,text:'Gewichteter Beitrag zur Portfolio-Rendite',color:'#6b7280',font:{size:9}}},
+      },
+      interaction:{mode:'index',intersect:false}}
+  });
+
+  // Dreier-Vergleich Chart
+  const ctx2=document.getElementById('scCompareChart').getContext('2d');
+  if(charts.scCompare) charts.scCompare.destroy();
+  const yrs=Array.from({length:11},(_,i)=>2024+i);
+  const NORWEG_RET=0.063, OUTPERF_RET=0.075;
+  const norwegPath=yrs.map((_,i)=>Math.round(kap*Math.pow(1+NORWEG_RET,i)));
+  const outperfPath=yrs.map((_,i)=>Math.round(kap*Math.pow(1+OUTPERF_RET,i)));
+  const schutzPath=yrs.map((_,i)=>Math.round(kap*Math.pow(1+ret,i)));
+  // Negativszenario-Pfad für Schutzportfolio
+  const negRet=scBlendRet('negativ')-0.0024;
+  const schutzNegPath=yrs.map((_,i)=>Math.round(kap*Math.pow(1+negRet,i)));
+  const norwegNegPath=yrs.map((_,i)=>Math.round(kap*Math.pow(1+(NORWEG_RET-0.12),i)));
+
+  const legHTML=`
+    <span class="leg-i"><span class="leg-sq" style="background:#4f8ef7"></span>Norwegerfonds (Erwartet)</span>
+    <span class="leg-i"><span class="leg-sq" style="background:#fb923c"></span>Outperformance (Erwartet)</span>
+    <span class="leg-i"><span class="leg-sq" style="background:#34d399"></span>Schuldenresilienz (Erwartet)</span>
+    <span class="leg-i"><span class="leg-sq" style="background:#f87171;opacity:.5"></span>Schuldenresilienz Negativszen.</span>
+    <span class="leg-i"><span class="leg-sq" style="background:#4f8ef7;opacity:.3"></span>Norwegerfonds Negativszen.</span>`;
+  document.getElementById('sc-leg').innerHTML=legHTML;
+
+  charts.scCompare=new Chart(ctx2,{
+    type:'line',
+    data:{labels:yrs.map(String),datasets:[
+      {label:'Norwegerfonds (Erwartet)',          data:norwegPath,    borderColor:'#4f8ef7',borderWidth:2,borderDash:[5,4],pointRadius:0,tension:0.3,fill:false},
+      {label:'Outperformance (Erwartet)',          data:outperfPath,   borderColor:'#fb923c',borderWidth:2,borderDash:[5,4],pointRadius:0,tension:0.3,fill:false},
+      {label:'Schuldenresilienz (Erwartet)',       data:schutzPath,    borderColor:'#34d399',borderWidth:2.5,pointRadius:0,tension:0.3,fill:false},
+      {label:'Schuldenresilienz (Negativszenario)',data:schutzNegPath, borderColor:'#f87171',borderWidth:1.5,pointRadius:0,tension:0.3,fill:false,backgroundColor:'#f8717118'},
+      {label:'Norwegerfonds (Negativszenario)',    data:norwegNegPath, borderColor:'#4f8ef766',borderWidth:1.5,pointRadius:0,tension:0.3,fill:false,borderDash:[2,3]},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:i=>`${i.dataset.label}: CHF ${i.raw>=1e6?(i.raw/1e6).toFixed(2)+' Mio.':(i.raw/1000).toFixed(0)+'K'}`}}},
+      scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b7280',font:{size:9},maxTicksLimit:6}},
+        y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b7280',font:{size:9},callback:v=>v>=1e6?(v/1e6).toFixed(1)+'M':(v/1000).toFixed(0)+'K'}}},
+      interaction:{mode:'index',intersect:false}}
+  });
+
+  // Insight
+  const finNorw=norwegPath[10], finOp=outperfPath[10], finSc=schutzPath[10];
+  const finScNeg=schutzNegPath[10], finNorwNeg=norwegNegPath[10];
+  document.getElementById('sc-insight').innerHTML=
+    `<b>Nach 10 Jahren (Erwartungspfad):</b> Norwegerfonds CHF ${(finNorw/1e6).toFixed(2)} Mio. · Outperformance CHF ${(finOp/1e6).toFixed(2)} Mio. · Schuldenresilienz CHF ${(finSc/1e6).toFixed(2)} Mio. `+
+    `— Renditeverzicht gegenüber Outperformance: CHF ${((finOp-finSc)/1000).toFixed(0)}'000. `+
+    `<b>Im Negativszenario:</b> Schuldenresilienz ${(finScNeg/1e6).toFixed(2)} Mio. vs. Norwegerfonds ${(finNorwNeg/1e6).toFixed(2)} Mio. — Unterschied CHF ${((finScNeg-finNorwNeg)/1000).toFixed(0)}'000. `+
+    `Der USD-Anteil dieses Portfolios (${(usd*100).toFixed(0)}%) ist deutlich tiefer als beim Norwegerfonds (~65%), die Duration der Anleihen nur ~2 Jahre statt ~7 Jahre. `+
+    `Gold (15%) und inflationsgebundene Anleihen (15%) bilden den Kern des Schutzes.`;
+
+  document.getElementById('sc-warn').innerHTML=
+    `<b>Hinweis:</b> Dieses Portfolio ist für die aktuell erhöhten Schuldenrisiken optimiert, nicht für maximale Rendite. Im positiven Szenario (AI-Produktivität) wird es die Outperformance-Variante deutlich unterbieten. `+
+    `Gold (15%) ist eine strategische Absicherung — in guten Börsenjahren kostet diese Position Rendite. Empfehlung: Bei Entspannung der Schulden-/Inflationslage sukzessive Richtung Norwegerfonds-Allokation normalisieren. Keine Anlageberatung.`;
+}
+
+
 
 /* ── MAIN GO ── */
 function go(){
